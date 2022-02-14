@@ -1,0 +1,21 @@
+[package]
+name = "evilset"
+version = "0.1.0"
+authors = ["Sayantan Khan <sayantangkhan@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Change egui to a proper version later
+eframe = { git = "https://github.com/emilk/egui", rev = "5459ab29b7d9345ec1848c7b28db63404c43ff74" }
+serde = { version = "1", features = ["derive"], optional = true }
+image = { version = "0.23", default-features = false, features = ["png"] }
+cardgen = { path = "../cardgen" }
+
+[features]
+default = []
+persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown

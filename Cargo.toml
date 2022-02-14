@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "evilset",
+    "cardgen"
+]
+
+[profile.release]
+opt-level = 2 # fast and small wasm
