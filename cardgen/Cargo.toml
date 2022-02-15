@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+resvg = "0.21"
+usvg = { version = "0.21.0", default-features = false }
+tiny-skia = "0.6.1"
