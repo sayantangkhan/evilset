@@ -6,7 +6,7 @@ This library generates a random collection of cards for a game of set by randoml
 ## Card attributes
 
 ### Shapes
-- Triangle
+- Diamond
 - Pill
 - Squiggle
 - ?
@@ -23,9 +23,9 @@ The number of objects on a card can vary from 1 to 6.
 - Hollow
 - Solid
 - Dashed (horizontal)
-- Dotted
-- Wavy
-- Crosshatch
+- Checkerboard
+- Polka dots
+- Vertical stripes
 
 ## PNG vs SVG
 
