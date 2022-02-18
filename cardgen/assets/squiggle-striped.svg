@@ -12,24 +12,6 @@
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
      id="defs952">
-    <pattern
-       xlink:href="#Strips1_1.5"
-       id="pattern4059"
-       patternTransform="matrix(0,10,-10,0,297.70729,-57.072121)" />
-    <pattern
-       patternUnits="userSpaceOnUse"
-       width="2.5"
-       height="1"
-       patternTransform="translate(0,0) scale(10,10)"
-       id="Strips1_1.5">
-      <rect
-         style="fill:black;stroke:none"
-         x="0"
-         y="-0.5"
-         width="1"
-         height="2"
-         id="rect2162" />
-    </pattern>
   </defs>
   <g
      id="g954"
