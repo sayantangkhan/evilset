@@ -1,57 +1,18 @@
+mod filling_nodes;
+
+use filling_nodes::get_filling_node;
 use resvg::ScreenSize;
-use std::{ops::Index, path::Path};
+use std::path::Path;
 use usvg::{Color, Fill, Node, NodeKind, Paint};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Filling {
     Hollow,
     Solid,
-    HorizontalDashed,
-    VerticalDashed,
+    HorizontalStriped,
+    Wavy,
     Checkerboard,
-    PolkaDots,
-}
-
-struct FillingNodes {
-    array: [Option<Node>; 6],
-}
-
-impl Index<Filling> for FillingNodes {
-    type Output = Option<Node>;
-
-    fn index(&self, index: Filling) -> &Self::Output {
-        match index {
-            Filling::Hollow => &self.array[0],
-            Filling::Solid => &self.array[1],
-            Filling::HorizontalDashed => &self.array[2],
-            Filling::VerticalDashed => &self.array[3],
-            Filling::Checkerboard => &self.array[4],
-            Filling::PolkaDots => &self.array[5],
-        }
-    }
-}
-
-fn generate_filling_nodes() -> FillingNodes {
-    let mut array_vec = Vec::new();
-    let opt = usvg::Options::default();
-
-    // Hollow pattern. Does not need a def node
-    array_vec.push(None);
-    // Solid pattern. Does not need a def node
-    array_vec.push(None);
-
-    // Loading horizontal stripe pattern
-    let horizontal_striped_svg = include_bytes!("../assets/diamond-striped.svg");
-    let rtree = usvg::Tree::from_data(horizontal_striped_svg, &opt.to_ref()).unwrap();
-    let horizontal_striped_node = rtree.root().first_child().unwrap().first_child().unwrap().make_deep_copy();
-    array_vec.push(Some(horizontal_striped_node));
-
-    // Remove this later
-    array_vec.push(None);
-    array_vec.push(None);
-    array_vec.push(None);
-
-    FillingNodes { array: array_vec.try_into().unwrap()}
+    VerticalStriped,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,7 +57,7 @@ fn fill_diamond(color: SetColor, filling: Filling, svg_root: &mut Node) {
 }
 
 pub fn render_diamond(pixmap_size: &ScreenSize, output_file: &Path) {
-    let svg_data = include_bytes!("../assets/diamond-striped.svg");
+    let svg_data = include_bytes!("../assets/shapes/diamond.svg");
 
     let opt = usvg::Options::default();
     let rtree = usvg::Tree::from_data(svg_data, &opt.to_ref()).unwrap();
@@ -138,23 +99,39 @@ pub fn render_diamond(pixmap_size: &ScreenSize, output_file: &Path) {
 }
 
 pub fn render_squiggle(pixmap_size: &ScreenSize, output_file: &Path) {
-    let svg_data = include_bytes!("../assets/squiggle-striped.svg");
-    let filling_nodes = generate_filling_nodes();
+    let svg_data = include_bytes!("../assets/shapes/squiggle.svg");
+    let filling_nodes = filling_nodes::generate_filling_nodes().unwrap();
 
     let opt = usvg::Options::default();
     let rtree = usvg::Tree::from_data(svg_data, &opt.to_ref()).unwrap();
 
-    // Adding stripes
-
     let mut defs_node = rtree.root().first_child().unwrap();
-    let horizontal_striped_node = filling_nodes[Filling::HorizontalDashed].as_ref().unwrap().make_deep_copy();
-    defs_node.prepend(horizontal_striped_node);
 
-    // Remove later
+    // let horizontal_striped_node =
+    // get_filling_node(Filling::HorizontalStriped, filling_nodes).unwrap();
+    // defs_node.prepend(horizontal_striped_node);
+    // let checkerboard_node = get_filling_node(Filling::Checkerboard, filling_nodes).unwrap();
+    // defs_node.prepend(checkerboard_node);
+    let vertical_striped_node = get_filling_node(Filling::VerticalStriped, filling_nodes).unwrap();
+    defs_node.prepend(vertical_striped_node);
 
-    let stroke_path = rtree.root().first_child().unwrap().next_sibling().unwrap();
-    let interior_path = stroke_path.next_sibling().unwrap();
-    dbg!(stroke_path);
+    let mut stroke_path = rtree.root().first_child().unwrap().next_sibling().unwrap();
+    // let interior_path = stroke_path.next_sibling().unwrap();
+    // dbg!(stroke_path);
+
+    {
+        let mut node_value = stroke_path.borrow_mut();
+
+        match &mut *node_value {
+            NodeKind::Path(path) => {
+                // dbg!(&path);
+                // path.fill = Some(Fill::from_paint(Paint::Color(Color::black())));
+                path.fill = Some(Fill::from_paint(Paint::Link("pattern".to_string())));
+                // path.stroke.as_mut().unwrap().paint = Paint::Color(Color::white());
+            }
+            _ => (),
+        }
+    }
 
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
     resvg::render(

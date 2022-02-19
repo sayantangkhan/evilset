@@ -7,35 +7,16 @@
    viewBox="0 0 44.025036 90.197433"
    version="1.1"
    id="svg5"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
      id="defs2">
     <pattern
-       xlink:href="#Strips1_1.5"
-       id="pattern4059"
-       patternTransform="matrix(0,10,-10,0,297.70729,-57.072121)" />
-    <pattern
-       patternUnits="userSpaceOnUse"
-       width="1"
-       height="1"
-       patternTransform="translate(0,0) scale(10,10)"
-       id="Strips1_1.5">
-      <rect
-         style="fill:black;stroke:none"
-         x="0"
-         y="-0.5"
-         width="0.5"
-         height="2"
-         id="rect2162" />
-    </pattern>
-    <pattern
        patternUnits="userSpaceOnUse"
        width="2"
        height="2"
        patternTransform="translate(0,0) scale(10,10)"
-       id="Checkerboard">
+       id="pattern">
       <rect
          style="fill:black;stroke:none"
          x="0"
@@ -56,7 +37,7 @@
      id="layer1"
      transform="translate(462.53763,-22.577685)">
     <path
-       style="fill:url(#pattern4059);fill-opacity:1;stroke:#000000;stroke-width:0.965;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:url(#pattern);fill-opacity:1.0;stroke:#000000;stroke-width:0.965;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m -440.52511,22.787635 -21.47663,44.4393 21.47663,44.439315 21.47662,-44.439315 -21.47662,-44.4393"
        id="path1032" />
   </g>
