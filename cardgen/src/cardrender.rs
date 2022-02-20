@@ -1,12 +1,12 @@
 use resvg::ScreenSize;
 use tiny_skia::Pixmap;
 
-use crate::{colorandfill::color_shape, filling_nodes::FillingNodes, Card};
+use crate::{colorandfill::color_shape, filling_nodes::FillingNodes, CardVisualAttr};
 
 const WIDTH: u32 = 292;
 const HEIGHT: u32 = 174;
 
-pub fn render_card(card: Card, filling_nodes: &FillingNodes) -> Pixmap {
+pub fn render_card(card: CardVisualAttr, filling_nodes: &FillingNodes) -> Pixmap {
     let pixmap_size = ScreenSize::new(WIDTH, HEIGHT).unwrap();
 
     let single_element = color_shape(card.color, card.filling, card.shape, filling_nodes);

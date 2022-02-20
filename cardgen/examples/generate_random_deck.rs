@@ -15,7 +15,7 @@ fn main() {
         for color in attributes.colors {
             for shape in attributes.shapes {
                 for filling in attributes.fillings {
-                    let card = Card {
+                    let card = CardVisualAttr {
                         num,
                         color,
                         shape,

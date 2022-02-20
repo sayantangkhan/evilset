@@ -8,7 +8,7 @@ pub use filling_nodes::generate_filling_nodes;
 pub use randomize_attribute::{generate_random_attributes, generate_standard_attributes};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Card {
+pub struct CardVisualAttr {
     pub num: SetNum,
     pub color: SetColor,
     pub shape: Shape,

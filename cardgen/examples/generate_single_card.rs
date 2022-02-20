@@ -9,7 +9,7 @@ fn main() {
     }
 
     let filling_nodes = generate_filling_nodes().unwrap();
-    let card = Card {
+    let card = CardVisualAttr {
         num: SetNum::Six,
         color: SetColor::Purple,
         shape: Shape::Squiggle,
