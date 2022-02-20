@@ -13,7 +13,7 @@
      id="defs2">
     <pattern
        patternUnits="userSpaceOnUse"
-       width="2"
+       width="1"
        height="1"
        patternTransform="translate(0,0) scale(10,10)"
        id="pattern">
@@ -21,7 +21,7 @@
          style="fill:black;stroke:none"
          x="0"
          y="-0.5"
-         width="1"
+         width="0.5"
          height="2"
          id="rect1830" />
     </pattern>

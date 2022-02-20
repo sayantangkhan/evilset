@@ -44,7 +44,7 @@ pub(crate) fn generate_filling_nodes() -> Option<FillingNodes> {
     })
 }
 
-pub(crate) fn get_filling_node(filling: Filling, nodes: FillingNodes) -> Option<Node> {
+pub(crate) fn get_filling_node(filling: Filling, nodes: &FillingNodes) -> Option<Node> {
     match filling {
         Filling::Hollow => None,
         Filling::Solid => None,
@@ -91,6 +91,18 @@ pub(crate) fn get_filling_node(filling: Filling, nodes: FillingNodes) -> Option<
 
             Some(return_node)
         }
-        Filling::Wavy => None,
+        Filling::Wavy => {
+            let filling_node = nodes.array[5].as_ref().unwrap();
+            let filling_node_child = filling_node.first_child().unwrap();
+
+            let return_node_data = filling_node.borrow().clone();
+            let return_node_child_data = filling_node_child.borrow().clone();
+
+            let mut return_node = Node::new(return_node_data);
+            let return_node_child = Node::new(return_node_child_data);
+            return_node.append(return_node_child);
+
+            Some(return_node)
+        }
     }
 }

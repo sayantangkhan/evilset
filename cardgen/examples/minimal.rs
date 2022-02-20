@@ -13,6 +13,6 @@ fn main() {
 
     let pixmap_size = ScreenSize::new(1000, 500).unwrap();
 
-    // render_diamond(&pixmap_size, &Path::new(&args[1]));
-    render_squiggle(&pixmap_size, &Path::new(&args[1]));
+    render_diamond(&pixmap_size, &Path::new(&args[1]));
+    // render_squiggle(&pixmap_size, &Path::new(&args[1]));
 }

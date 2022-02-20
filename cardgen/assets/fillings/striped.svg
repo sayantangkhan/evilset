@@ -23,7 +23,7 @@
        patternTransform="translate(0,0) scale(10,10)"
        id="Strips1_1.5">
       <rect
-         style="fill:black;stroke:none"
+         style="fill:blue;stroke:none"
          x="0"
          y="-0.5"
          width="0.5"
