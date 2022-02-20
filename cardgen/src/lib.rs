@@ -5,7 +5,7 @@ mod randomize_attribute;
 
 pub use cardrender::render_card;
 pub use filling_nodes::generate_filling_nodes;
-pub use randomize_attribute::generate_random_attributes;
+pub use randomize_attribute::{generate_random_attributes, generate_standard_attributes};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Card {
