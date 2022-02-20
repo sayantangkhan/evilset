@@ -50,7 +50,7 @@ fn random_deck_generation_benchmark(c: &mut Criterion) {
 }
 
 fn standard_deck_generation_benchmark(c: &mut Criterion) {
-    c.bench_function("Random deck generation benchmark", |b| {
+    c.bench_function("Standard deck generation benchmark", |b| {
         b.iter(|| render_standard_deck())
     });
 }
