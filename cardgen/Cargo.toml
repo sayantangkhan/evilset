@@ -9,3 +9,11 @@ edition = "2021"
 resvg = "0.21"
 usvg = { version = "0.21.0", default-features = false }
 tiny-skia = "0.6.1"
+rand = "0.8.5"
+
+[dev-dependencies]
+criterion = "0.3.5"
+
+[[bench]]
+name = "cardgen-bench"
+harness = false

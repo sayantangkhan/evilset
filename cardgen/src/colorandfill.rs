@@ -51,7 +51,6 @@ pub(crate) fn color_shape(
                 Shape::Heart | Shape::Spade | Shape::Club => {
                     path.stroke.as_mut().unwrap().paint = Paint::Color(setcolor.into());
                 }
-                _ => (),
             },
             _ => (),
         }

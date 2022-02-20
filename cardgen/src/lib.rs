@@ -1,14 +1,22 @@
+mod cardrender;
 mod colorandfill;
 mod filling_nodes;
+mod randomize_attribute;
 
-use colorandfill::color_shape;
-use filling_nodes::generate_filling_nodes;
-use resvg::ScreenSize;
-use std::path::Path;
-use usvg::{Color, Fill, Node, NodeKind, Paint};
+pub use cardrender::render_card;
+pub use filling_nodes::generate_filling_nodes;
+pub use randomize_attribute::generate_random_attributes;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Filling {
+pub struct Card {
+    pub num: SetNum,
+    pub color: SetColor,
+    pub shape: Shape,
+    pub filling: Filling,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Filling {
     Hollow,
     Solid,
     HorizontalStriped,
@@ -18,7 +26,7 @@ enum Filling {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SetColor {
+pub enum SetColor {
     Purple,
     Red,
     Green,
@@ -28,7 +36,7 @@ enum SetColor {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SetNum {
+pub enum SetNum {
     One,
     Two,
     Three,
@@ -38,7 +46,7 @@ enum SetNum {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Shape {
+pub enum Shape {
     Diamond,
     Pill,
     Squiggle,
@@ -47,45 +55,66 @@ enum Shape {
     Club,
 }
 
-pub fn render_diamond(pixmap_size: &ScreenSize, output_file: &Path) {
-    let filling_nodes = generate_filling_nodes().unwrap();
-
-    let colored_diamond = color_shape(
-        SetColor::Purple,
-        Filling::HorizontalStriped,
-        Shape::Club,
-        &filling_nodes,
-    );
-
-    let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
-    resvg::render(
-        &colored_diamond,
-        usvg::FitTo::Height(pixmap_size.height()),
-        tiny_skia::Transform::from_scale(0.7, 0.7),
-        pixmap.as_mut(),
-    )
-    .unwrap();
-
-    pixmap.save_png(output_file).unwrap();
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Attributes {
+    pub numbers: [SetNum; 3],
+    pub colors: [SetColor; 3],
+    pub shapes: [Shape; 3],
+    pub fillings: [Filling; 3],
 }
 
-pub fn render_squiggle(pixmap_size: &ScreenSize, output_file: &Path) {
-    let filling_nodes = generate_filling_nodes().unwrap();
+impl Filling {
+    fn index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(Filling::Hollow),
+            1 => Some(Filling::Solid),
+            2 => Some(Filling::HorizontalStriped),
+            3 => Some(Filling::Wavy),
+            4 => Some(Filling::Checkerboard),
+            5 => Some(Filling::VerticalStriped),
+            _ => None,
+        }
+    }
+}
 
-    let colored_squiggle = color_shape(
-        SetColor::Yellow,
-        Filling::Wavy,
-        Shape::Squiggle,
-        &filling_nodes,
-    );
+impl SetColor {
+    fn index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(SetColor::Purple),
+            1 => Some(SetColor::Red),
+            2 => Some(SetColor::Green),
+            3 => Some(SetColor::Black),
+            4 => Some(SetColor::Yellow),
+            5 => Some(SetColor::Blue),
+            _ => None,
+        }
+    }
+}
 
-    let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
-    resvg::render(
-        &colored_squiggle,
-        usvg::FitTo::Height(pixmap_size.height()),
-        tiny_skia::Transform::from_scale(0.7, 0.7),
-        pixmap.as_mut(),
-    )
-    .unwrap();
-    pixmap.save_png(output_file).unwrap();
+impl SetNum {
+    fn index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(SetNum::One),
+            1 => Some(SetNum::Two),
+            2 => Some(SetNum::Three),
+            3 => Some(SetNum::Four),
+            4 => Some(SetNum::Five),
+            5 => Some(SetNum::Six),
+            _ => None,
+        }
+    }
+}
+
+impl Shape {
+    fn index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(Shape::Diamond),
+            1 => Some(Shape::Pill),
+            2 => Some(Shape::Squiggle),
+            3 => Some(Shape::Heart),
+            4 => Some(Shape::Spade),
+            5 => Some(Shape::Club),
+            _ => None,
+        }
+    }
 }

@@ -6,7 +6,7 @@ pub struct FillingNodes {
     array: [Option<Node>; 6],
 }
 
-pub(crate) fn generate_filling_nodes() -> Option<FillingNodes> {
+pub fn generate_filling_nodes() -> Option<FillingNodes> {
     let mut array_vec = Vec::new();
     let opt = usvg::Options::default();
 
@@ -45,11 +45,19 @@ pub(crate) fn generate_filling_nodes() -> Option<FillingNodes> {
 }
 
 pub(crate) fn get_filling_node(filling: Filling, nodes: &FillingNodes) -> Option<Node> {
+    let filling_node_index = match filling {
+        Filling::Hollow => 0,
+        Filling::Solid => 1,
+        Filling::HorizontalStriped => 2,
+        Filling::Checkerboard => 3,
+        Filling::VerticalStriped => 4,
+        Filling::Wavy => 5,
+    };
+
     match filling {
-        Filling::Hollow => None,
-        Filling::Solid => None,
-        Filling::HorizontalStriped => {
-            let filling_node = nodes.array[2].as_ref().unwrap();
+        Filling::Hollow | Filling::Solid => None,
+        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::Wavy => {
+            let filling_node = nodes.array[filling_node_index].as_ref().unwrap();
             let filling_node_child = filling_node.first_child().unwrap();
 
             let return_node_data = filling_node.borrow().clone();
@@ -62,7 +70,7 @@ pub(crate) fn get_filling_node(filling: Filling, nodes: &FillingNodes) -> Option
             Some(return_node)
         }
         Filling::Checkerboard => {
-            let filling_node = nodes.array[3].as_ref().unwrap();
+            let filling_node = nodes.array[filling_node_index].as_ref().unwrap();
             let first_child = filling_node.first_child().unwrap();
             let second_child = first_child.next_sibling().unwrap();
 
@@ -75,32 +83,6 @@ pub(crate) fn get_filling_node(filling: Filling, nodes: &FillingNodes) -> Option
             let return_node_second_child = Node::new(second_child_data);
             return_node.append(return_node_first_child);
             return_node.append(return_node_second_child);
-
-            Some(return_node)
-        }
-        Filling::VerticalStriped => {
-            let filling_node = nodes.array[4].as_ref().unwrap();
-            let filling_node_child = filling_node.first_child().unwrap();
-
-            let return_node_data = filling_node.borrow().clone();
-            let return_node_child_data = filling_node_child.borrow().clone();
-
-            let mut return_node = Node::new(return_node_data);
-            let return_node_child = Node::new(return_node_child_data);
-            return_node.append(return_node_child);
-
-            Some(return_node)
-        }
-        Filling::Wavy => {
-            let filling_node = nodes.array[5].as_ref().unwrap();
-            let filling_node_child = filling_node.first_child().unwrap();
-
-            let return_node_data = filling_node.borrow().clone();
-            let return_node_child_data = filling_node_child.borrow().clone();
-
-            let mut return_node = Node::new(return_node_data);
-            let return_node_child = Node::new(return_node_child_data);
-            return_node.append(return_node_child);
 
             Some(return_node)
         }
