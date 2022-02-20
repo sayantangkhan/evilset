@@ -42,9 +42,9 @@ enum Shape {
     Diamond,
     Pill,
     Squiggle,
-    Triangle,
-    Rectangle,
-    Pentagon,
+    Heart,
+    Spade,
+    Club,
 }
 
 pub fn render_diamond(pixmap_size: &ScreenSize, output_file: &Path) {
@@ -52,8 +52,8 @@ pub fn render_diamond(pixmap_size: &ScreenSize, output_file: &Path) {
 
     let colored_diamond = color_shape(
         SetColor::Purple,
-        Filling::Checkerboard,
-        Shape::Diamond,
+        Filling::HorizontalStriped,
+        Shape::Club,
         &filling_nodes,
     );
 

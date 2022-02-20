@@ -21,20 +21,17 @@ pub(crate) fn color_shape(
     shape: Shape,
     filling_nodes: &FillingNodes,
 ) -> Tree {
-    match shape {
-        Shape::Squiggle => color_squiggle(setcolor, filling, filling_nodes),
-        Shape::Diamond => color_diamond(setcolor, filling, filling_nodes),
-        _ => {
-            todo!()
-        }
-    }
-}
-
-fn color_squiggle(setcolor: SetColor, filling: Filling, filling_nodes: &FillingNodes) -> Tree {
-    let svg_data = include_bytes!("../assets/shapes/squiggle.svg");
+    let svg_data = match shape {
+        Shape::Squiggle => include_bytes!("../assets/shapes/squiggle.svg").to_vec(),
+        Shape::Diamond => include_bytes!("../assets/shapes/diamond.svg").to_vec(),
+        Shape::Pill => include_bytes!("../assets/shapes/pill.svg").to_vec(),
+        Shape::Heart => include_bytes!("../assets/shapes/heart.svg").to_vec(),
+        Shape::Spade => include_bytes!("../assets/shapes/spade.svg").to_vec(),
+        Shape::Club => include_bytes!("../assets/shapes/club.svg").to_vec(),
+    };
 
     let opt = usvg::Options::default();
-    let rtree = usvg::Tree::from_data(svg_data, &opt.to_ref()).unwrap();
+    let rtree = usvg::Tree::from_data(&svg_data, &opt.to_ref()).unwrap();
 
     let mut defs_node = rtree.root().first_child().unwrap();
     let filling_node = get_filling_node(filling, filling_nodes);
@@ -47,97 +44,15 @@ fn color_squiggle(setcolor: SetColor, filling: Filling, filling_nodes: &FillingN
         let mut node_value = stroke_path.borrow_mut();
 
         match &mut *node_value {
-            NodeKind::Path(path) => {
-                path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-            }
-            _ => (),
-        }
-    }
-
-    // Color and fill interior
-    {
-        let mut node_value = interior_path.borrow_mut();
-        match &mut *node_value {
-            NodeKind::Path(path) => match filling {
-                Filling::Hollow => {
-                    path.fill = None;
-                }
-                Filling::Solid => {
+            NodeKind::Path(path) => match shape {
+                Shape::Squiggle | Shape::Diamond | Shape::Pill => {
                     path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
                 }
-                _ => {
-                    path.fill = Some(Fill::from_paint(Paint::Link("pattern".to_string())));
+                Shape::Heart | Shape::Spade | Shape::Club => {
+                    path.stroke.as_mut().unwrap().paint = Paint::Color(setcolor.into());
                 }
+                _ => (),
             },
-            _ => (),
-        }
-    }
-
-    // Populate filling pattern
-    match filling {
-        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::Wavy => {
-            let filling_node = filling_node.unwrap();
-            let mut filling_node_child = filling_node.first_child().unwrap();
-            let mut node_value = filling_node_child.borrow_mut();
-            match &mut *node_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
-            }
-
-            defs_node.prepend(filling_node);
-        }
-        Filling::Checkerboard => {
-            let filling_node = filling_node.unwrap();
-            let mut filling_node_first_child = filling_node.first_child().unwrap();
-            let mut filling_node_second_child =
-                filling_node.first_child().unwrap().next_sibling().unwrap();
-
-            let mut first_child_value = filling_node_first_child.borrow_mut();
-            match &mut *first_child_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
-            }
-
-            let mut second_child_value = filling_node_second_child.borrow_mut();
-            match &mut *second_child_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
-            }
-
-            defs_node.prepend(filling_node);
-        }
-        _ => (),
-    }
-
-    return rtree;
-}
-
-fn color_diamond(setcolor: SetColor, filling: Filling, filling_nodes: &FillingNodes) -> Tree {
-    let svg_data = include_bytes!("../assets/shapes/diamond.svg");
-
-    let opt = usvg::Options::default();
-    let rtree = usvg::Tree::from_data(svg_data, &opt.to_ref()).unwrap();
-
-    let mut defs_node = rtree.root().first_child().unwrap();
-    let filling_node = get_filling_node(filling, filling_nodes);
-
-    let mut interior_path = rtree.root().first_child().unwrap().next_sibling().unwrap();
-    let mut stroke_path = interior_path.next_sibling().unwrap();
-
-    // Color boundary first
-    {
-        let mut node_value = stroke_path.borrow_mut();
-
-        match &mut *node_value {
-            NodeKind::Path(path) => {
-                path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-            }
             _ => (),
         }
     }
