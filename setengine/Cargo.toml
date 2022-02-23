@@ -6,7 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+cardgen = { path = "../cardgen"}
+rand = "0.8.5"
+itertools = "0.10"
 
 [dev-dependencies]
 quickcheck = "1"
 quickcheck_macros = "1"
+criterion = "0.3.5"
+
+[[bench]]
+name = "setengine-bench"
+harness = false

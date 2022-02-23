@@ -43,13 +43,11 @@ fn render_standard_deck() {
     }
 }
 
-fn random_deck_generation_benchmark(c: &mut Criterion) {
+fn deck_generation_benchmark(c: &mut Criterion) {
     c.bench_function("Random deck generation benchmark", |b| {
         b.iter(|| render_random_deck())
     });
-}
 
-fn standard_deck_generation_benchmark(c: &mut Criterion) {
     c.bench_function("Standard deck generation benchmark", |b| {
         b.iter(|| render_standard_deck())
     });
@@ -57,7 +55,6 @@ fn standard_deck_generation_benchmark(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    random_deck_generation_benchmark,
-    standard_deck_generation_benchmark
+    deck_generation_benchmark,
 );
 criterion_main!(benches);

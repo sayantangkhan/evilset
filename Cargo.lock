@@ -2194,8 +2194,12 @@ dependencies = [
 name = "setengine"
 version = "0.1.0"
 dependencies = [
+ "cardgen",
+ "criterion",
+ "itertools",
  "quickcheck",
  "quickcheck_macros",
+ "rand",
 ]
 
 [[package]]
