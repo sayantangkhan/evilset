@@ -15,6 +15,7 @@ eframe = { git = "https://github.com/emilk/egui", rev = "5459ab29b7d9345ec1848c7
 serde = { version = "1", features = ["derive"], optional = true }
 image = { version = "0.23", default-features = false, features = ["png"] }
 cardgen = { path = "../cardgen" }
+setengine = { path = "../setengine" }
 
 [features]
 default = []
