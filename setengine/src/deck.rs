@@ -105,14 +105,14 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
             return Some(false);
         } else {
             for index in selection {
-                self.in_play.remove(*index);
+                if let Some(new_card) = self.in_deck.pop() {
+                    self.in_play[*index] = new_card;
+                } else {
+                    self.in_play.remove(*index);
+                }
             }
 
-            for i in 0..3 {
-                self.in_play.push(self.in_deck[i]);
-                self.in_deck.remove(i);
-            }
-
+            // This is a little hairy because. Deal with this later.
             while !T::contains_generalized_set(&self.in_play) {
                 for i in 0..3 {
                     self.in_play.push(self.in_deck[i]);
