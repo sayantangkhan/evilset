@@ -11,11 +11,23 @@ pub struct Deck {
 
 // Empty types to indicate whether Set or Ultraset is being played
 pub trait GeneralizedSetGame {
+    const NUM_CARDS: usize;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool;
     fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool;
-    // Not doing the efficient thing here until necessary
 }
 pub enum SetGame {}
 impl GeneralizedSetGame for SetGame {
+    const NUM_CARDS: usize = 3;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        let card1 = (cards_picked[0]).0;
+        let card2 = (cards_picked[1]).0;
+        let card3 = (cards_picked[2]).0;
+
+        is_set(card1, card2, card3)
+    }
+
     fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
         for triple in cards_in_play.iter().combinations(3) {
             let card1 = (*triple[0]).0;
@@ -28,8 +40,20 @@ impl GeneralizedSetGame for SetGame {
         false
     }
 }
+
 pub enum UltrasetGame {}
 impl GeneralizedSetGame for UltrasetGame {
+    const NUM_CARDS: usize = 4;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        let card1 = (cards_picked[0]).0;
+        let card2 = (cards_picked[1]).0;
+        let card3 = (cards_picked[2]).0;
+        let card4 = (cards_picked[3]).0;
+
+        is_ultraset(card1, card2, card3, card4)
+    }
+
     fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
         for quadruple in cards_in_play.iter().combinations(4) {
             let card1 = (*quadruple[0]).0;
@@ -50,7 +74,56 @@ pub struct ActiveDeck<T> {
     _game_type: PhantomData<T>,
 }
 
-impl<T: GeneralizedSetGame> ActiveDeck<T> {}
+impl<T: GeneralizedSetGame> ActiveDeck<T> {
+    pub fn start_play(deck: &Deck) -> Self {
+        let mut initial_cards = 12;
+        while !T::contains_generalized_set(&deck.cards[0..initial_cards]) {
+            initial_cards += 3;
+        }
+        let in_play = deck.cards[..initial_cards].to_vec();
+        let in_deck = deck.cards[initial_cards..].to_vec();
+
+        Self {
+            in_play,
+            in_deck,
+            _game_type: PhantomData::default(),
+        }
+    }
+
+    pub fn play_selection(&mut self, selection: &[usize]) -> Option<bool> {
+        if selection.len() != T::NUM_CARDS {
+            return None;
+        }
+
+        let mut selected_cards = Vec::new();
+        for index in selection {
+            let selected_card = self.in_play.get(*index)?;
+            selected_cards.push(*selected_card);
+        }
+
+        if !T::is_generalized_set(&selected_cards) {
+            return Some(false);
+        } else {
+            for index in selection {
+                self.in_play.remove(*index);
+            }
+
+            for i in 0..3 {
+                self.in_play.push(self.in_deck[i]);
+                self.in_deck.remove(i);
+            }
+
+            while !T::contains_generalized_set(&self.in_play) {
+                for i in 0..3 {
+                    self.in_play.push(self.in_deck[i]);
+                    self.in_deck.remove(i);
+                }
+            }
+
+            Some(true)
+        }
+    }
+}
 
 impl Deck {
     pub fn new_standard_deck() -> Self {
