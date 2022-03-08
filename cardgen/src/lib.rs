@@ -4,10 +4,10 @@ mod filling_nodes;
 mod randomize_attribute;
 
 pub use cardrender::render_card;
-pub use filling_nodes::generate_filling_nodes;
+pub use filling_nodes::{generate_filling_nodes, FillingNodes};
 pub use randomize_attribute::{generate_random_attributes, generate_standard_attributes};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CardVisualAttr {
     pub num: SetNum,
     pub color: SetColor,
@@ -15,7 +15,7 @@ pub struct CardVisualAttr {
     pub filling: Filling,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Filling {
     Hollow,
     Solid,
@@ -25,7 +25,7 @@ pub enum Filling {
     VerticalStriped,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SetColor {
     Purple,
     Red,
@@ -35,7 +35,7 @@ pub enum SetColor {
     Blue,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SetNum {
     One,
     Two,
@@ -45,7 +45,7 @@ pub enum SetNum {
     Six,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Shape {
     Diamond,
     Pill,

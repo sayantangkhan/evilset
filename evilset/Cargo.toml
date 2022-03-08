@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Change egui to a proper version later
-eframe = { git = "https://github.com/emilk/egui", rev = "5459ab29b7d9345ec1848c7b28db63404c43ff74" }
+eframe = "0.17"
 serde = { version = "1", features = ["derive"], optional = true }
 image = { version = "0.23", default-features = false, features = ["png"] }
 cardgen = { path = "../cardgen" }
