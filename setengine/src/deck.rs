@@ -1,77 +1,23 @@
 use cardgen::{generate_random_attributes, generate_standard_attributes, CardVisualAttr};
-use itertools::Itertools;
 use rand::prelude::*;
 use std::marker::PhantomData;
 
-use crate::{is_set, is_ultraset, CardCoordinates};
+use crate::{CardCoordinates, GeneralizedSetGame};
 
 pub struct Deck {
     pub cards: Vec<(CardCoordinates, CardVisualAttr)>,
-}
-
-// Empty types to indicate whether Set or Ultraset is being played
-pub trait GeneralizedSetGame {
-    const NUM_CARDS: usize;
-
-    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool;
-    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool;
-}
-pub enum SetGame {}
-impl GeneralizedSetGame for SetGame {
-    const NUM_CARDS: usize = 3;
-
-    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
-        let card1 = (cards_picked[0]).0;
-        let card2 = (cards_picked[1]).0;
-        let card3 = (cards_picked[2]).0;
-
-        is_set(card1, card2, card3)
-    }
-
-    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
-        for triple in cards_in_play.iter().combinations(3) {
-            let card1 = (*triple[0]).0;
-            let card2 = (*triple[1]).0;
-            let card3 = (*triple[2]).0;
-            if is_set(card1, card2, card3) {
-                return true;
-            }
-        }
-        false
-    }
-}
-
-pub enum UltrasetGame {}
-impl GeneralizedSetGame for UltrasetGame {
-    const NUM_CARDS: usize = 4;
-
-    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
-        let card1 = (cards_picked[0]).0;
-        let card2 = (cards_picked[1]).0;
-        let card3 = (cards_picked[2]).0;
-        let card4 = (cards_picked[3]).0;
-
-        is_ultraset(card1, card2, card3, card4)
-    }
-
-    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
-        for quadruple in cards_in_play.iter().combinations(4) {
-            let card1 = (*quadruple[0]).0;
-            let card2 = (*quadruple[1]).0;
-            let card3 = (*quadruple[2]).0;
-            let card4 = (*quadruple[3]).0;
-            if is_ultraset(card1, card2, card3, card4) {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 pub struct ActiveDeck<T> {
     in_play: Vec<(CardCoordinates, CardVisualAttr)>,
     in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
     _game_type: PhantomData<T>,
+}
+
+pub enum PlayResponse {
+    InvalidPlay,
+    ValidPlay,
+    GameOver,
 }
 
 impl<T: GeneralizedSetGame> ActiveDeck<T> {
@@ -90,37 +36,52 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
         }
     }
 
-    pub fn play_selection(&mut self, selection: &[usize]) -> Option<bool> {
+    pub fn play_selection(&mut self, selection: &[usize]) -> Option<PlayResponse> {
         if selection.len() != T::NUM_CARDS {
             return None;
-        }
-
-        let mut selected_cards = Vec::new();
-        for index in selection {
-            let selected_card = self.in_play.get(*index)?;
-            selected_cards.push(*selected_card);
-        }
-
-        if !T::is_generalized_set(&selected_cards) {
-            return Some(false);
         } else {
+            let mut selected_cards = Vec::new();
             for index in selection {
-                if let Some(new_card) = self.in_deck.pop() {
-                    self.in_play[*index] = new_card;
+                selected_cards.push(*self.in_play.get(*index)?);
+            }
+            if !T::is_generalized_set(&selected_cards) {
+                return Some(PlayResponse::InvalidPlay);
+            } else {
+                if self.in_deck.len() >= T::NUM_CARDS {
+                    // Enough cards in deck to replace
+                    for index in selection {
+                        self.in_play[*index] = self.in_deck.pop().unwrap();
+                    }
+                    // Add more cards until in_play has generalized set
+                    while !T::contains_generalized_set(&self.in_play) {
+                        if self.in_deck.is_empty() {
+                            return Some(PlayResponse::GameOver);
+                        }
+                        for _ in 0..T::NUM_CARDS {
+                            if let Some(card) = self.in_deck.pop() {
+                                self.in_play.push(card);
+                            }
+                        }
+                    }
+                    return Some(PlayResponse::ValidPlay);
                 } else {
-                    self.in_play.remove(*index);
+                    // Not enough cards to replace
+                    for index in selection {
+                        self.in_play.remove(*index);
+                    }
+                    while !T::contains_generalized_set(&self.in_play) {
+                        if self.in_deck.is_empty() {
+                            return Some(PlayResponse::GameOver);
+                        }
+                        for _ in 0..T::NUM_CARDS {
+                            if let Some(card) = self.in_deck.pop() {
+                                self.in_play.push(card);
+                            }
+                        }
+                    }
+                    return Some(PlayResponse::ValidPlay);
                 }
             }
-
-            // This is a little hairy because. Deal with this later.
-            while !T::contains_generalized_set(&self.in_play) {
-                for i in 0..3 {
-                    self.in_play.push(self.in_deck[i]);
-                    self.in_deck.remove(i);
-                }
-            }
-
-            Some(true)
         }
     }
 }

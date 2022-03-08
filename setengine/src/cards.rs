@@ -1,3 +1,5 @@
+use cardgen::CardVisualAttr;
+use itertools::Itertools;
 use std::ops::{Add, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -6,6 +8,65 @@ pub struct CardCoordinates {
     color: u8,
     shape: u8,
     filling: u8,
+}
+
+// Empty types to indicate whether Set or Ultraset is being played
+pub trait GeneralizedSetGame {
+    const NUM_CARDS: usize;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool;
+    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool;
+}
+pub enum SetGame {}
+impl GeneralizedSetGame for SetGame {
+    const NUM_CARDS: usize = 3;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        let card1 = (cards_picked[0]).0;
+        let card2 = (cards_picked[1]).0;
+        let card3 = (cards_picked[2]).0;
+
+        is_set(card1, card2, card3)
+    }
+
+    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        for triple in cards_in_play.iter().combinations(3) {
+            let card1 = (*triple[0]).0;
+            let card2 = (*triple[1]).0;
+            let card3 = (*triple[2]).0;
+            if is_set(card1, card2, card3) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+pub enum UltrasetGame {}
+impl GeneralizedSetGame for UltrasetGame {
+    const NUM_CARDS: usize = 4;
+
+    fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        let card1 = (cards_picked[0]).0;
+        let card2 = (cards_picked[1]).0;
+        let card3 = (cards_picked[2]).0;
+        let card4 = (cards_picked[3]).0;
+
+        is_ultraset(card1, card2, card3, card4)
+    }
+
+    fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool {
+        for quadruple in cards_in_play.iter().combinations(4) {
+            let card1 = (*quadruple[0]).0;
+            let card2 = (*quadruple[1]).0;
+            let card3 = (*quadruple[2]).0;
+            let card4 = (*quadruple[3]).0;
+            if is_ultraset(card1, card2, card3, card4) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 pub fn is_set(card1: CardCoordinates, card2: CardCoordinates, card3: CardCoordinates) -> bool {
