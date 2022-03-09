@@ -7,6 +7,8 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 ### Core functionality
 - [ ] Layout buttons in a 3 column grid
 - [ ] Implement dark and light mode and ensure it works with card colors
+- [ ] Implement a timer
+- [ ] Make state persist across runs
 
 ### Code cleanup
 - [ ] Set up lints for clippy in all 3 crates.
