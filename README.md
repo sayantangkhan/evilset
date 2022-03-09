@@ -2,11 +2,22 @@
 
 A variant of Set (and Ultraset) that randomizes attributes across games.
 
-### Things to do
-- [ ] Implement floating image buttons that move to a location.
-- [ ] Create randomized set cards using the `png` crate.
+## Things to do
 
-### Building locally
+### Core functionality
+- [ ] Layout buttons in a 3 column grid
+- [ ] Implement dark and light mode and ensure it works with card colors
+
+### Code cleanup
+- [ ] Set up lints for clippy in all 3 crates.
+- [ ] Remove extraneous `pub`
+
+### Packaging
+- [ ] Set up a WASM web version
+- [ ] Package for Flathub
+- [ ] Package for MacOS
+
+## Building locally on Linux
 
 Make sure you are using the latest version of stable rust by running `rustup update`.
 

@@ -9,7 +9,7 @@ pub struct Deck {
 }
 
 pub struct ActiveDeck<T> {
-    in_play: Vec<(CardCoordinates, CardVisualAttr)>,
+    pub in_play: Vec<(CardCoordinates, CardVisualAttr)>,
     in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
     _game_type: PhantomData<T>,
 }

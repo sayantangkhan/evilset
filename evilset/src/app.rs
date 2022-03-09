@@ -1,10 +1,13 @@
 use std::{collections::HashMap, time::Duration};
 
 use cardgen::{render_card, CardVisualAttr};
-use eframe::{egui, epaint::TextureHandle, epi};
+use eframe::{
+    egui::{self, ImageButton},
+    epaint::TextureHandle,
+    epi,
+};
 use egui::{Color32, FontId, RichText};
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
-// use egui::{containers::Frame, Stroke};
 
 const TIMES_TO_DISPLAY: usize = 15;
 
@@ -32,6 +35,7 @@ enum GameDeck {
 struct ActiveGameData {
     active_deck: GameDeck,
     card_textures: HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>,
+    selected: bool,
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -103,10 +107,6 @@ impl epi::App for EvilSetApp {
             filling_nodes,
         } = self;
 
-        // let texture: &egui::TextureHandle = texture.get_or_insert_with(|| {
-        //     let image = load_image(include_bytes!("../assets/sample.png")).unwrap();
-        //     ctx.load_texture("sample", image)
-        // });
         match game_state {
             &mut GameState::Menu => self.update_menu(ctx, frame),
             &mut GameState::Set => self.play_set(ctx, frame),
@@ -125,11 +125,6 @@ impl EvilSetApp {
             game_data,
             filling_nodes,
         } = self;
-
-        // let texture: &egui::TextureHandle = texture.get_or_insert_with(|| {
-        //     let image = load_image(include_bytes!("../assets/sample.png")).unwrap();
-        //     ctx.load_texture("sample", image)
-        // });
 
         egui::SidePanel::right("side_panel")
             // .default_width(160.0)
@@ -192,20 +187,7 @@ impl EvilSetApp {
                         }
                     });
                 });
-
-                // if ui
-                //     .add(egui::ImageButton::new(texture, texture.size_vec2()))
-                //     .clicked()
-                // {
-                //     // *value -= 1.0;
-                // }
             });
-
-        // let new_frame = Frame::default().stroke(Stroke::new(1.0, Color32::RED));
-
-        // egui::CentralPanel::default()
-        //     .frame(new_frame)
-        //     .show(ctx, |ui| {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -253,6 +235,7 @@ impl EvilSetApp {
                     self.game_data = Some(ActiveGameData {
                         active_deck,
                         card_textures,
+                        selected: false,
                     });
                     *game_state = GameState::Set;
                     println!("Set selected");
@@ -294,13 +277,6 @@ impl EvilSetApp {
                     println!("Evil Ultra Set selected");
                 }
             })
-
-            // ui.hyperlink("https://github.com/emilk/eframe_template");
-            // ui.add(egui::github_link_file!(
-            // "https://github.com/emilk/eframe_template/blob/master/",
-            // "Source code."
-            // ));
-            // egui::warn_if_debug_build(ui);
         });
     }
 
@@ -331,6 +307,31 @@ impl EvilSetApp {
             ui.add_space(10.0);
             ui.separator();
             ui.add_space(20.0);
+
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let ActiveGameData {
+                    active_deck,
+                    card_textures,
+                    selected,
+                } = game_data.as_mut().unwrap();
+                if let GameDeck::Set(active_deck) = active_deck {
+                    let available_width = ui.available_width();
+
+                    for card in &active_deck.in_play {
+                        let texture = card_textures.get(card).unwrap();
+                        let button = ui.add(
+                            ImageButton::new(texture, scale_card(available_width))
+                                .selected(*selected),
+                        );
+                        if button.clicked() {
+                            dbg!(card);
+                            *selected = !(*selected);
+                        }
+                    }
+                } else {
+                    unreachable!()
+                }
+            })
         });
     }
 
@@ -339,14 +340,8 @@ impl EvilSetApp {
     }
 }
 
-fn load_image(image_data: &[u8]) -> Result<egui::ColorImage, image::ImageError> {
-    use image::GenericImageView as _;
-    let image = image::load_from_memory(image_data)?;
-    let size = [image.width() as _, image.height() as _];
-    let image_buffer = image.to_rgba8();
-    let pixels = image_buffer.as_flat_samples();
-    Ok(egui::ColorImage::from_rgba_unmultiplied(
-        size,
-        pixels.as_slice(),
-    ))
+fn scale_card(frame_width: f32) -> (f32, f32) {
+    let new_width = frame_width / 4.0;
+    let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
+    (new_width, new_height)
 }

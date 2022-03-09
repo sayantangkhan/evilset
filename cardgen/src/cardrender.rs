@@ -3,8 +3,8 @@ use tiny_skia::Pixmap;
 
 use crate::{colorandfill::color_shape, filling_nodes::FillingNodes, CardVisualAttr};
 
-const WIDTH: u32 = 292;
-const HEIGHT: u32 = 174;
+pub const WIDTH: u32 = 292;
+pub const HEIGHT: u32 = 174;
 
 pub fn render_card(card: CardVisualAttr, filling_nodes: &FillingNodes) -> Pixmap {
     let pixmap_size = ScreenSize::new(WIDTH, HEIGHT).unwrap();
@@ -12,7 +12,9 @@ pub fn render_card(card: CardVisualAttr, filling_nodes: &FillingNodes) -> Pixmap
     let single_element = color_shape(card.color, card.filling, card.shape, filling_nodes);
 
     let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
-    pixmap.fill(tiny_skia::Color::WHITE);
+    let mut bg_color = tiny_skia::Color::WHITE;
+    bg_color.apply_opacity(0.5);
+    pixmap.fill(bg_color);
 
     match card.num {
         crate::SetNum::One => {

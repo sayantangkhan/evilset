@@ -4,6 +4,8 @@ mod filling_nodes;
 mod randomize_attribute;
 
 pub use cardrender::render_card;
+pub use cardrender::HEIGHT as CARDHEIGHT;
+pub use cardrender::WIDTH as CARDWIDTH;
 pub use filling_nodes::{generate_filling_nodes, FillingNodes};
 pub use randomize_attribute::{generate_random_attributes, generate_standard_attributes};
 
