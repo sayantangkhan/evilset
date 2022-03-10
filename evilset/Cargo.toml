@@ -13,7 +13,6 @@ crate-type = ["cdylib", "rlib"]
 eframe = "0.17"
 egui = {version = "0.17", features = ["multi_threaded"]}
 serde = { version = "1", features = ["derive"], optional = true }
-image = { version = "0.23", default-features = false, features = ["png"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
 poll-promise = "0.1"

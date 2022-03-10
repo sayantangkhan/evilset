@@ -6,12 +6,13 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 
 ### Core functionality
 - [x] Implement dark and light mode and ensure it works with card colors
+- [x] Async rendering (using thread for non-wasm)
 - [ ] Layout buttons in a 3 column grid
 - [ ] Implement a timer
 - [ ] Enable quitting a game
 - [ ] Enable hints
 - [ ] Make state persist across runs
-- [ ] Async rendering
+- [ ] Async rendering (other methods for wasm)
 - [ ] Play sounds
 - [ ] Better window controls
 

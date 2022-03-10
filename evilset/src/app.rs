@@ -141,9 +141,9 @@ impl EvilSetApp {
             game_state,
             times,
             game_data: _,
-            filling_nodes,
+            filling_nodes: _,
             theme: _,
-            rendering,
+            rendering: _,
         } = self;
 
         egui::SidePanel::right("side_panel")
@@ -278,11 +278,6 @@ impl EvilSetApp {
                         rendering_func,
                     ));
 
-                    // self.game_data = Some(ActiveGameData {
-                    //     active_deck,
-                    //     card_textures,
-                    //     selected: false,
-                    // });
                     *game_state = GameState::Set;
                     println!("Set selected");
                 }
@@ -340,7 +335,12 @@ impl EvilSetApp {
             match rendering_promise.ready() {
                 None => {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        ui.add(egui::Spinner::new()); // still loading
+                        ui.vertical_centered_justified(|ui| {
+                            ui.label(
+                                RichText::new("Rendering cards").font(FontId::proportional(18.0)),
+                            );
+                            ui.add(egui::Spinner::new()); // still loading
+                        });
                     });
                 }
                 Some((active_deck, card_textures)) => {
