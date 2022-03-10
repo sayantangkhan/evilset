@@ -5,10 +5,12 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 ## Things to do
 
 ### Core functionality
+- [x] Implement dark and light mode and ensure it works with card colors
 - [ ] Layout buttons in a 3 column grid
-- [ ] Implement dark and light mode and ensure it works with card colors
 - [ ] Implement a timer
 - [ ] Make state persist across runs
+- [ ] Async rendering
+- [ ] Play sounds
 
 ### Code cleanup
 - [ ] Set up lints for clippy in all 3 crates.

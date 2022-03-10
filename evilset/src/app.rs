@@ -2,12 +2,14 @@ use std::{collections::HashMap, time::Duration};
 
 use cardgen::{render_card, CardVisualAttr};
 use eframe::{
-    egui::{self, ImageButton},
+    egui::{self, Button, ImageButton, Layout},
     epaint::TextureHandle,
     epi,
 };
 use egui::{Color32, FontId, RichText};
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
+
+use crate::themes::AppTheme;
 
 const TIMES_TO_DISPLAY: usize = 15;
 
@@ -50,6 +52,8 @@ pub struct EvilSetApp {
     game_data: Option<ActiveGameData>,
     // Cached SVG data
     filling_nodes: Option<cardgen::FillingNodes>,
+    // Theme
+    theme: AppTheme,
 }
 
 impl Default for EvilSetApp {
@@ -64,6 +68,7 @@ impl Default for EvilSetApp {
             },
             game_data: None,
             filling_nodes: None,
+            theme: AppTheme::Light,
         }
     }
 }
@@ -105,8 +110,14 @@ impl epi::App for EvilSetApp {
             times,
             game_data,
             filling_nodes,
+            theme,
         } = self;
 
+        ctx.set_visuals(crate::themes::generate_base_theme(&self.theme));
+        // *ui.visuals_mut() = match self.theme {
+        //     AppTheme::Dark => egui::Visuals::dark(),
+        //     AppTheme::Light => egui::Visuals::light(),
+        // };
         match game_state {
             &mut GameState::Menu => self.update_menu(ctx, frame),
             &mut GameState::Set => self.play_set(ctx, frame),
@@ -122,13 +133,14 @@ impl EvilSetApp {
         let Self {
             game_state,
             times,
-            game_data,
+            game_data: _,
             filling_nodes,
+            theme: _,
         } = self;
 
         egui::SidePanel::right("side_panel")
             // .default_width(160.0)
-            .resizable(false)
+            .resizable(true)
             .show(ctx, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     ui.vertical_centered(|ui| {
@@ -141,7 +153,7 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new("Set")
                                 .font(FontId::proportional(18.0))
-                                .color(Color32::LIGHT_BLUE),
+                                .color(crate::themes::thematic_blue(&self.theme)),
                         );
                         for time in times.set_times.iter().take(TIMES_TO_DISPLAY) {
                             ui.monospace(time.as_secs().to_string());
@@ -154,7 +166,7 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new("Evil Set")
                                 .font(FontId::proportional(18.0))
-                                .color(Color32::LIGHT_RED),
+                                .color(crate::themes::thematic_red(&self.theme)),
                         );
                         for time in times.evilset_times.iter().take(TIMES_TO_DISPLAY) {
                             ui.monospace(time.as_secs().to_string());
@@ -167,7 +179,7 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new("Ultra Set")
                                 .font(FontId::proportional(18.0))
-                                .color(Color32::LIGHT_BLUE),
+                                .color(crate::themes::thematic_blue(&self.theme)),
                         );
                         for time in times.ultraset_times.iter().take(TIMES_TO_DISPLAY) {
                             ui.monospace(time.as_secs().to_string());
@@ -180,7 +192,7 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new("Evil Ultra Set")
                                 .font(FontId::proportional(18.0))
-                                .color(Color32::LIGHT_RED),
+                                .color(crate::themes::thematic_red(&self.theme)),
                         );
                         for time in times.evilultraset_times.iter().take(TIMES_TO_DISPLAY) {
                             ui.monospace(time.as_secs().to_string());
@@ -192,12 +204,30 @@ impl EvilSetApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
 
-            ui.vertical_centered(|ui| {
-                ui.heading(
-                    RichText::new("Evil Set")
-                        .font(FontId::proportional(28.0))
-                        .color(Color32::LIGHT_RED),
-                );
+            ui.horizontal(|ui| {
+                ui.with_layout(Layout::left_to_right(), |ui| {
+                    *ui.visuals_mut() = match self.theme {
+                        AppTheme::Dark => egui::Visuals::dark(),
+                        AppTheme::Light => egui::Visuals::light(),
+                    };
+                    let theme_btn = ui.add(Button::new({
+                        match self.theme {
+                            AppTheme::Dark => RichText::new("🌞").size(25.0),
+                            AppTheme::Light => RichText::new("🌙").size(25.0),
+                        }
+                    }));
+                    if theme_btn.clicked() {
+                        self.theme.switch();
+                    }
+                });
+
+                ui.vertical_centered(|ui| {
+                    ui.heading(
+                        RichText::new("Evil Set")
+                            .font(FontId::proportional(28.0))
+                            .color(crate::themes::thematic_red(&self.theme)),
+                    );
+                });
             });
 
             ui.add_space(10.0);
@@ -209,7 +239,7 @@ impl EvilSetApp {
                     .add(egui::Button::new(
                         RichText::new("          Set          ")
                             .font(FontId::proportional(23.0))
-                            .color(Color32::LIGHT_BLUE),
+                            .color(crate::themes::thematic_blue(&self.theme)),
                     ))
                     .clicked()
                 {
@@ -245,7 +275,7 @@ impl EvilSetApp {
                     .add(egui::Button::new(
                         RichText::new("      Evil Set       ")
                             .font(FontId::proportional(23.0))
-                            .color(Color32::LIGHT_RED),
+                            .color(crate::themes::thematic_red(&self.theme)),
                     ))
                     .clicked()
                 {
@@ -257,7 +287,7 @@ impl EvilSetApp {
                     .add(egui::Button::new(
                         RichText::new("     Ultra Set     ")
                             .font(FontId::proportional(23.0))
-                            .color(Color32::LIGHT_BLUE),
+                            .color(crate::themes::thematic_blue(&self.theme)),
                     ))
                     .clicked()
                 {
@@ -269,7 +299,7 @@ impl EvilSetApp {
                     .add(egui::Button::new(
                         RichText::new(" Evil Ultra Set  ")
                             .font(FontId::proportional(23.0))
-                            .color(Color32::LIGHT_RED),
+                            .color(crate::themes::thematic_red(&self.theme)),
                     ))
                     .clicked()
                 {
@@ -282,10 +312,11 @@ impl EvilSetApp {
 
     fn play_set(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         let Self {
-            game_state,
-            times,
+            game_state: _,
+            times: _,
             game_data,
-            filling_nodes,
+            filling_nodes: _,
+            theme: _,
         } = self;
 
         egui::SidePanel::right("side_panel")
@@ -300,7 +331,7 @@ impl EvilSetApp {
                 ui.heading(
                     RichText::new("Set")
                         .font(FontId::proportional(28.0))
-                        .color(Color32::LIGHT_BLUE),
+                        .color(crate::themes::thematic_blue(&self.theme)),
                 );
             });
 
@@ -309,6 +340,7 @@ impl EvilSetApp {
             ui.add_space(20.0);
 
             egui::ScrollArea::vertical().show(ui, |ui| {
+                *ui.visuals_mut() = crate::themes::generate_card_theme(&self.theme);
                 let ActiveGameData {
                     active_deck,
                     card_textures,
