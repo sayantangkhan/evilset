@@ -8,9 +8,12 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 - [x] Implement dark and light mode and ensure it works with card colors
 - [ ] Layout buttons in a 3 column grid
 - [ ] Implement a timer
+- [ ] Enable quitting a game
+- [ ] Enable hints
 - [ ] Make state persist across runs
 - [ ] Async rendering
 - [ ] Play sounds
+- [ ] Better window controls
 
 ### Code cleanup
 - [ ] Set up lints for clippy in all 3 crates.

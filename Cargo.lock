@@ -285,6 +285,7 @@ name = "cardgen"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "getrandom",
  "rand",
  "resvg",
  "tiny-skia",
@@ -970,6 +971,7 @@ dependencies = [
  "cardgen",
  "eframe",
  "image",
+ "poll-promise",
  "serde",
  "setengine",
 ]
@@ -1113,8 +1115,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1877,6 +1881,15 @@ dependencies = [
  "crc32fast",
  "deflate 1.0.0",
  "miniz_oxide 0.5.1",
+]
+
+[[package]]
+name = "poll-promise"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "260817b339544e5b23d4bb66d4522d89dd64af88d16b6dcd7b2a2409ee2e095d"
+dependencies = [
+ "static_assertions",
 ]
 
 [[package]]

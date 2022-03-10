@@ -16,6 +16,7 @@ serde = { version = "1", features = ["derive"], optional = true }
 image = { version = "0.23", default-features = false, features = ["png"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
+poll-promise = "0.1"
 
 [features]
 default = []

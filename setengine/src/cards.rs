@@ -17,6 +17,7 @@ pub trait GeneralizedSetGame {
     fn is_generalized_set(cards_picked: &[(CardCoordinates, CardVisualAttr)]) -> bool;
     fn contains_generalized_set(cards_in_play: &[(CardCoordinates, CardVisualAttr)]) -> bool;
 }
+#[derive(Clone)]
 pub enum SetGame {}
 impl GeneralizedSetGame for SetGame {
     const NUM_CARDS: usize = 3;
@@ -42,6 +43,7 @@ impl GeneralizedSetGame for SetGame {
     }
 }
 
+#[derive(Clone)]
 pub enum UltrasetGame {}
 impl GeneralizedSetGame for UltrasetGame {
     const NUM_CARDS: usize = 4;

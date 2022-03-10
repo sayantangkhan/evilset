@@ -1,12 +1,13 @@
 use std::{collections::HashMap, time::Duration};
 
-use cardgen::{render_card, CardVisualAttr};
+use cardgen::{render_card, CardVisualAttr, FillingNodes};
 use eframe::{
     egui::{self, Button, ImageButton, Layout},
     epaint::TextureHandle,
     epi,
 };
-use egui::{Color32, FontId, RichText};
+use egui::{FontId, RichText};
+use poll_promise::Promise;
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
 
 use crate::themes::AppTheme;
@@ -19,7 +20,7 @@ enum GameState {
     EvilSet,
     UltraSet,
     EvilUltraSet,
-    ShowDeck,
+    // ShowDeck,
 }
 
 struct Times {
@@ -29,14 +30,17 @@ struct Times {
     evilultraset_times: Vec<Duration>,
 }
 
+#[derive(Clone)]
 enum GameDeck {
     Set(ActiveDeck<SetGame>),
-    UltraSet(ActiveDeck<UltrasetGame>),
+    _UltraSet(ActiveDeck<UltrasetGame>),
 }
+
+type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
 
 struct ActiveGameData {
     active_deck: GameDeck,
-    card_textures: HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>,
+    card_textures: TextureMap,
     selected: bool,
 }
 
@@ -54,6 +58,8 @@ pub struct EvilSetApp {
     filling_nodes: Option<cardgen::FillingNodes>,
     // Theme
     theme: AppTheme,
+    // Background rendering promise
+    rendering: Option<Promise<(GameDeck, TextureMap)>>,
 }
 
 impl Default for EvilSetApp {
@@ -69,6 +75,7 @@ impl Default for EvilSetApp {
             game_data: None,
             filling_nodes: None,
             theme: AppTheme::Light,
+            rendering: None,
         }
     }
 }
@@ -107,10 +114,11 @@ impl epi::App for EvilSetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         let Self {
             game_state,
-            times,
-            game_data,
-            filling_nodes,
-            theme,
+            times: _,
+            game_data: _,
+            filling_nodes: _,
+            theme: _,
+            rendering: _,
         } = self;
 
         ctx.set_visuals(crate::themes::generate_base_theme(&self.theme));
@@ -121,7 +129,7 @@ impl epi::App for EvilSetApp {
         match game_state {
             &mut GameState::Menu => self.update_menu(ctx, frame),
             &mut GameState::Set => self.play_set(ctx, frame),
-            &mut GameState::ShowDeck => self.show_deck(ctx, frame),
+            // &mut GameState::ShowDeck => self.show_deck(ctx, frame),
             _ => todo!(),
         }
     }
@@ -129,18 +137,19 @@ impl epi::App for EvilSetApp {
 
 impl EvilSetApp {
     /// Called whenever app is in the initial menu stage
-    fn update_menu(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+    fn update_menu(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         let Self {
             game_state,
             times,
             game_data: _,
             filling_nodes,
             theme: _,
+            rendering,
         } = self;
 
         egui::SidePanel::right("side_panel")
             // .default_width(160.0)
-            .resizable(true)
+            .resizable(false)
             .show(ctx, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     ui.vertical_centered(|ui| {
@@ -199,6 +208,15 @@ impl EvilSetApp {
                         }
                     });
                 });
+
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.1;
+                        ui.label("Source code on ");
+                        ui.hyperlink_to("Github", "https://github.com/sayantangkhan/evilset");
+                        egui::warn_if_debug_build(ui);
+                    });
+                });
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -243,30 +261,29 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    // Generate the images for a standard deck
                     let deck = Deck::new_standard_deck();
                     let active_set_deck: ActiveDeck<SetGame> = ActiveDeck::start_play(&deck);
                     let active_deck = GameDeck::Set(active_set_deck);
 
-                    let mut card_textures = HashMap::new();
+                    let cloned_context = ctx.clone();
 
-                    for (coord, visattr) in deck.cards {
-                        let pixmap = render_card(visattr, filling_nodes.as_ref().unwrap());
+                    let rendering_func = move || {
+                        let filling_nodes = cardgen::generate_filling_nodes();
+                        (
+                            active_deck,
+                            generate_deck_textures(deck, &filling_nodes, &cloned_context),
+                        )
+                    };
+                    self.rendering = Some(Promise::spawn_thread(
+                        "Background rendering",
+                        rendering_func,
+                    ));
 
-                        let image = egui::ColorImage::from_rgba_unmultiplied(
-                            [pixmap.width() as _, pixmap.height() as _],
-                            pixmap.data(),
-                        );
-
-                        let texture = ctx.load_texture(format!("{:?}", visattr), image);
-                        card_textures.insert((coord, visattr), texture);
-                    }
-
-                    self.game_data = Some(ActiveGameData {
-                        active_deck,
-                        card_textures,
-                        selected: false,
-                    });
+                    // self.game_data = Some(ActiveGameData {
+                    //     active_deck,
+                    //     card_textures,
+                    //     selected: false,
+                    // });
                     *game_state = GameState::Set;
                     println!("Set selected");
                 }
@@ -310,65 +327,75 @@ impl EvilSetApp {
         });
     }
 
-    fn play_set(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+    fn play_set(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         let Self {
             game_state: _,
             times: _,
             game_data,
             filling_nodes: _,
             theme: _,
+            rendering,
         } = self;
 
-        egui::SidePanel::right("side_panel")
-            // .default_width(160.0)
-            .resizable(false)
-            .show(ctx, |ui| {});
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.vertical_centered(|ui| {
-                ui.heading(
-                    RichText::new("Set")
-                        .font(FontId::proportional(28.0))
-                        .color(crate::themes::thematic_blue(&self.theme)),
-                );
-            });
-
-            ui.add_space(10.0);
-            ui.separator();
-            ui.add_space(20.0);
-
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                *ui.visuals_mut() = crate::themes::generate_card_theme(&self.theme);
-                let ActiveGameData {
-                    active_deck,
-                    card_textures,
-                    selected,
-                } = game_data.as_mut().unwrap();
-                if let GameDeck::Set(active_deck) = active_deck {
-                    let available_width = ui.available_width();
-
-                    for card in &active_deck.in_play {
-                        let texture = card_textures.get(card).unwrap();
-                        let button = ui.add(
-                            ImageButton::new(texture, scale_card(available_width))
-                                .selected(*selected),
-                        );
-                        if button.clicked() {
-                            dbg!(card);
-                            *selected = !(*selected);
-                        }
-                    }
-                } else {
-                    unreachable!()
+        if let Some(rendering_promise) = rendering {
+            match rendering_promise.ready() {
+                None => {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.add(egui::Spinner::new()); // still loading
+                    });
                 }
-            })
-        });
-    }
+                Some((active_deck, card_textures)) => {
+                    *game_data = Some(ActiveGameData {
+                        active_deck: active_deck.clone(),
+                        card_textures: card_textures.clone(),
+                        selected: false,
+                    });
+                    *rendering = None;
+                }
+            }
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                // The central panel the region left after adding TopPanel's and SidePanel's
 
-    fn show_deck(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        todo!()
+                ui.vertical_centered(|ui| {
+                    ui.heading(
+                        RichText::new("Set")
+                            .font(FontId::proportional(28.0))
+                            .color(crate::themes::thematic_blue(&self.theme)),
+                    );
+                });
+
+                ui.add_space(10.0);
+                ui.separator();
+                ui.add_space(20.0);
+
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    *ui.visuals_mut() = crate::themes::generate_card_theme(&self.theme);
+                    let ActiveGameData {
+                        active_deck,
+                        card_textures,
+                        selected,
+                    } = game_data.as_mut().unwrap();
+                    if let GameDeck::Set(active_deck) = active_deck {
+                        let available_width = ui.available_width();
+
+                        for card in &active_deck.in_play {
+                            let texture = card_textures.get(card).unwrap();
+                            let button = ui.add(
+                                ImageButton::new(texture, scale_card(available_width))
+                                    .selected(*selected),
+                            );
+                            if button.clicked() {
+                                dbg!(card);
+                                *selected = !(*selected);
+                            }
+                        }
+                    } else {
+                        unreachable!()
+                    }
+                })
+            });
+        }
     }
 }
 
@@ -376,4 +403,28 @@ fn scale_card(frame_width: f32) -> (f32, f32) {
     let new_width = frame_width / 4.0;
     let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
     (new_width, new_height)
+}
+
+// TODO: Make this more ergonomic
+fn generate_deck_textures(
+    deck: Deck,
+    filling_nodes: &Option<FillingNodes>,
+    ctx: &egui::Context,
+) -> TextureMap {
+    // Generate the images for a deck
+    let mut card_textures = HashMap::new();
+
+    for (coord, visattr) in &deck.cards {
+        let pixmap = render_card(*visattr, filling_nodes.as_ref().unwrap());
+
+        let image = egui::ColorImage::from_rgba_unmultiplied(
+            [pixmap.width() as _, pixmap.height() as _],
+            pixmap.data(),
+        );
+
+        let texture = ctx.load_texture(format!("{:?}", visattr), image);
+        card_textures.insert((*coord, *visattr), texture);
+    }
+
+    card_textures
 }

@@ -8,6 +8,7 @@ pub struct Deck {
     pub cards: Vec<(CardCoordinates, CardVisualAttr)>,
 }
 
+#[derive(Clone)]
 pub struct ActiveDeck<T> {
     pub in_play: Vec<(CardCoordinates, CardVisualAttr)>,
     in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
