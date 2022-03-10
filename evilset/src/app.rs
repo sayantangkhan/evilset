@@ -2,11 +2,10 @@ use std::{collections::HashMap, time::Duration};
 
 use cardgen::{render_card, CardVisualAttr, FillingNodes};
 use eframe::{
-    egui::{self, Button, ImageButton, Layout},
+    egui::{Button, FontId, ImageButton, Layout, RichText},
     epaint::TextureHandle,
     epi,
 };
-use egui::{FontId, RichText};
 use poll_promise::Promise;
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
 

@@ -1,5 +1,5 @@
-use eframe::egui::style::Visuals;
-use eframe::egui::Color32;
+use egui::style::Visuals;
+use egui::Color32;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AppTheme {

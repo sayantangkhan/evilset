@@ -3,7 +3,7 @@
 members = [
     "evilset",
     "cardgen",
-    "setengine"
+    "setengine",
 ]
 
 [profile.release]
