@@ -121,10 +121,7 @@ impl epi::App for EvilSetApp {
         } = self;
 
         ctx.set_visuals(crate::themes::generate_base_theme(&self.theme));
-        // *ui.visuals_mut() = match self.theme {
-        //     AppTheme::Dark => egui::Visuals::dark(),
-        //     AppTheme::Light => egui::Visuals::light(),
-        // };
+
         match game_state {
             &mut GameState::Menu => self.update_menu(ctx, frame),
             &mut GameState::Set => self.play_set(ctx, frame),
@@ -370,6 +367,7 @@ impl EvilSetApp {
 
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     *ui.visuals_mut() = crate::themes::generate_card_theme(&self.theme);
+
                     let ActiveGameData {
                         active_deck,
                         card_textures,
@@ -377,18 +375,27 @@ impl EvilSetApp {
                     } = game_data.as_mut().unwrap();
                     if let GameDeck::Set(active_deck) = active_deck {
                         let available_width = ui.available_width();
+                        let available_height = ui.available_height();
 
-                        for card in &active_deck.in_play {
-                            let texture = card_textures.get(card).unwrap();
-                            let button = ui.add(
-                                ImageButton::new(texture, scale_card(available_width))
+                        // ui.spacing_mut().item_spacing = [1.0, 1.0].into();
+                        // dbg!(ui.spacing());
+
+                        ui.columns(3, |columns| {
+                            for (index, card) in active_deck.in_play.iter().enumerate() {
+                                let texture = card_textures.get(card).unwrap();
+                                let button = &mut columns[index % 3].add(
+                                    ImageButton::new(
+                                        texture,
+                                        scale_card(available_width, available_height),
+                                    )
                                     .selected(*selected),
-                            );
-                            if button.clicked() {
-                                dbg!(card);
-                                *selected = !(*selected);
+                                );
+                                if button.clicked() {
+                                    dbg!(card);
+                                    *selected = !(*selected);
+                                }
                             }
-                        }
+                        });
                     } else {
                         unreachable!()
                     }
@@ -398,13 +405,26 @@ impl EvilSetApp {
     }
 }
 
-fn scale_card(frame_width: f32) -> (f32, f32) {
-    let new_width = frame_width / 4.0;
-    let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
-    (new_width, new_height)
+fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
+    let scaling_with_width = {
+        let new_width = frame_width / 4.0;
+        let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
+        (new_width, new_height)
+    };
+
+    let scaling_with_height = {
+        let new_height = frame_height / 5.0;
+        let new_width = (cardgen::CARDWIDTH as f32) * (new_height / (cardgen::CARDHEIGHT as f32));
+        (new_width, new_height)
+    };
+
+    if scaling_with_height.0 < scaling_with_width.0 {
+        scaling_with_height
+    } else {
+        scaling_with_width
+    }
 }
 
-// TODO: Make this more ergonomic
 fn generate_deck_textures(
     deck: Deck,
     filling_nodes: &Option<FillingNodes>,

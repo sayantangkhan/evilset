@@ -7,6 +7,7 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 ### Core functionality
 - [x] Implement dark and light mode and ensure it works with card colors
 - [x] Async rendering (using thread for non-wasm)
+- [ ] Tweak patterns and colors to work well with the color scheme
 - [ ] Layout buttons in a 3 column grid
 - [ ] Implement a timer
 - [ ] Enable quitting a game
