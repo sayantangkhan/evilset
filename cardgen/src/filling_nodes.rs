@@ -1,5 +1,4 @@
 use crate::Filling;
-// use std::ops::{Index, IndexMut};
 use usvg::Node;
 
 pub struct FillingNodes {

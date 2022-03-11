@@ -257,7 +257,8 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    let deck = Deck::new_standard_deck();
+                    // let deck = Deck::new_standard_deck();
+                    let deck = Deck::new_random_deck();
                     let active_set_deck: ActiveDeck<SetGame> = ActiveDeck::start_play(&deck);
                     let active_deck = GameDeck::Set(active_set_deck);
 
