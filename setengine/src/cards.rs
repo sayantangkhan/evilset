@@ -85,15 +85,18 @@ pub fn is_ultraset(
     card3: CardCoordinates,
     card4: CardCoordinates,
 ) -> bool {
-    if complete_set(card1, card2) == complete_set(card3, card4) {
-        true
-    } else if complete_set(card1, card3) == complete_set(card2, card4) {
-        true
-    } else if complete_set(card1, card4) == complete_set(card2, card3) {
-        true
-    } else {
-        false
-    }
+    // if complete_set(card1, card2) == complete_set(card3, card4) {
+    //     true
+    // } else if complete_set(card1, card3) == complete_set(card2, card4) {
+    //     true
+    // } else if complete_set(card1, card4) == complete_set(card2, card3) {
+    //     true
+    // } else {
+    //     false
+    // }
+    complete_set(card1, card2) == complete_set(card3, card4)
+        || complete_set(card1, card3) == complete_set(card2, card4)
+        || complete_set(card1, card4) == complete_set(card2, card3)
 }
 
 impl CardCoordinates {

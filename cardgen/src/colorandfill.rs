@@ -2,9 +2,9 @@ use crate::filling_nodes::{get_filling_node, FillingNodes};
 use crate::{Filling, SetColor, Shape};
 use usvg::{Color, Fill, NodeKind, Paint, Tree};
 
-impl Into<Color> for SetColor {
-    fn into(self) -> Color {
-        match self {
+impl From<SetColor> for Color {
+    fn from(set_color: SetColor) -> Self {
+        match set_color {
             SetColor::Purple => Color::new_rgb(128, 0, 128),
             SetColor::Red => Color::new_rgb(255, 1, 1),
             SetColor::Green => Color::new_rgb(0, 128, 2),
@@ -43,24 +43,23 @@ pub(crate) fn color_shape(
     {
         let mut node_value = stroke_path.borrow_mut();
 
-        match &mut *node_value {
-            NodeKind::Path(path) => match shape {
+        if let NodeKind::Path(path) = &mut *node_value {
+            match shape {
                 Shape::Squiggle | Shape::Diamond | Shape::Pill => {
                     path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
                 }
                 Shape::Heart | Shape::Spade | Shape::Club => {
                     path.stroke.as_mut().unwrap().paint = Paint::Color(setcolor.into());
                 }
-            },
-            _ => (),
+            }
         }
     }
 
     // Color and fill interior
     {
         let mut node_value = interior_path.borrow_mut();
-        match &mut *node_value {
-            NodeKind::Path(path) => match filling {
+        if let NodeKind::Path(path) = &mut *node_value {
+            match filling {
                 Filling::Hollow => {
                     path.fill = None;
                 }
@@ -70,8 +69,7 @@ pub(crate) fn color_shape(
                 _ => {
                     path.fill = Some(Fill::from_paint(Paint::Link("pattern".to_string())));
                 }
-            },
-            _ => (),
+            }
         }
     }
 
@@ -81,11 +79,8 @@ pub(crate) fn color_shape(
             let filling_node = filling_node.unwrap();
             let mut filling_node_child = filling_node.first_child().unwrap();
             let mut node_value = filling_node_child.borrow_mut();
-            match &mut *node_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
+            if let NodeKind::Path(path) = &mut *node_value {
+                path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
             }
 
             defs_node.prepend(filling_node);
@@ -97,19 +92,13 @@ pub(crate) fn color_shape(
                 filling_node.first_child().unwrap().next_sibling().unwrap();
 
             let mut first_child_value = filling_node_first_child.borrow_mut();
-            match &mut *first_child_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
+            if let NodeKind::Path(path) = &mut *first_child_value {
+                path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
             }
 
             let mut second_child_value = filling_node_second_child.borrow_mut();
-            match &mut *second_child_value {
-                NodeKind::Path(path) => {
-                    path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
-                }
-                _ => (),
+            if let NodeKind::Path(path) = &mut *second_child_value {
+                path.fill = Some(Fill::from_paint(Paint::Color(setcolor.into())));
             }
 
             defs_node.prepend(filling_node);
@@ -117,5 +106,5 @@ pub(crate) fn color_shape(
         _ => (),
     }
 
-    return rtree;
+    rtree
 }

@@ -9,9 +9,9 @@ pub(crate) enum AppTheme {
 
 impl AppTheme {
     pub(crate) fn switch(&mut self) {
-        match self {
-            &mut AppTheme::Light => *self = AppTheme::Dark,
-            &mut AppTheme::Dark => *self = AppTheme::Light,
+        match *self {
+            AppTheme::Light => *self = AppTheme::Dark,
+            AppTheme::Dark => *self = AppTheme::Light,
         }
     }
 }

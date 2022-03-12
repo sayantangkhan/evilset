@@ -1,6 +1,10 @@
 use crate::{Attributes, Filling, SetColor, SetNum, Shape};
 use rand::prelude::*;
 
+/// # Panics
+///
+/// Will not actually panic
+#[must_use]
 pub fn generate_standard_attributes() -> Attributes {
     let indices = [0, 1, 2];
 
@@ -40,6 +44,10 @@ pub fn generate_standard_attributes() -> Attributes {
     }
 }
 
+/// # Panics
+///
+/// Will not actually panic
+#[must_use]
 pub fn generate_random_attributes() -> Attributes {
     let mut rng = thread_rng();
     let mut indices = [0, 1, 2, 3, 4, 5];

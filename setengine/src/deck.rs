@@ -39,15 +39,13 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
 
     pub fn play_selection(&mut self, selection: &[usize]) -> Option<PlayResponse> {
         if selection.len() != T::NUM_CARDS {
-            return None;
+            None
         } else {
             let mut selected_cards = Vec::new();
             for index in selection {
                 selected_cards.push(*self.in_play.get(*index)?);
             }
-            if !T::is_generalized_set(&selected_cards) {
-                return Some(PlayResponse::InvalidPlay);
-            } else {
+            if T::is_generalized_set(&selected_cards) {
                 if self.in_deck.len() >= T::NUM_CARDS {
                     // Enough cards in deck to replace
                     for index in selection {
@@ -64,7 +62,7 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
                             }
                         }
                     }
-                    return Some(PlayResponse::ValidPlay);
+                    Some(PlayResponse::ValidPlay)
                 } else {
                     // Not enough cards to replace
                     for index in selection {
@@ -80,14 +78,17 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
                             }
                         }
                     }
-                    return Some(PlayResponse::ValidPlay);
+                    Some(PlayResponse::ValidPlay)
                 }
+            } else {
+                Some(PlayResponse::InvalidPlay)
             }
         }
     }
 }
 
 impl Deck {
+    #[must_use]
     pub fn new_standard_deck() -> Self {
         let standard_attributes = generate_standard_attributes();
         let mut cards = Vec::new();
@@ -110,7 +111,7 @@ impl Deck {
                             filling: actual_filling,
                         };
 
-                        cards.push((coordinates, visual_attr))
+                        cards.push((coordinates, visual_attr));
                     }
                 }
             }
@@ -122,6 +123,7 @@ impl Deck {
         Self { cards }
     }
 
+    #[must_use]
     pub fn new_random_deck() -> Self {
         let random_attributes = generate_random_attributes();
         let mut cards = Vec::new();
@@ -144,7 +146,7 @@ impl Deck {
                             filling: actual_filling,
                         };
 
-                        cards.push((coordinates, visual_attr))
+                        cards.push((coordinates, visual_attr));
                     }
                 }
             }

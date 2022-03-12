@@ -1,3 +1,6 @@
+#![cfg_attr(not(debug_assertions), deny(warnings))]
+#![warn(clippy::all)]
+
 use std::{collections::HashMap, time::Duration};
 
 use cardgen::{render_card, CardVisualAttr, FillingNodes};
@@ -122,9 +125,9 @@ impl epi::App for EvilSetApp {
 
         ctx.set_visuals(crate::themes::generate_base_theme(&self.theme));
 
-        match game_state {
-            &mut GameState::Menu => self.update_menu(ctx, frame),
-            &mut GameState::Set => self.play_set(ctx, frame),
+        match *game_state {
+            GameState::Menu => self.update_menu(ctx, frame),
+            GameState::Set => self.play_set(ctx, frame),
             // &mut GameState::ShowDeck => self.show_deck(ctx, frame),
             _ => todo!(),
         }
@@ -268,7 +271,7 @@ impl EvilSetApp {
                         let filling_nodes = cardgen::generate_filling_nodes();
                         (
                             active_deck,
-                            generate_deck_textures(deck, &filling_nodes, &cloned_context),
+                            generate_deck_textures(&deck, &filling_nodes, &cloned_context),
                         )
                     };
                     self.rendering = Some(Promise::spawn_thread(
@@ -427,7 +430,7 @@ fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
 }
 
 fn generate_deck_textures(
-    deck: Deck,
+    deck: &Deck,
     filling_nodes: &Option<FillingNodes>,
     ctx: &egui::Context,
 ) -> TextureMap {

@@ -1,3 +1,8 @@
+#![forbid(unsafe_code)]
+#![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
+#![warn(rust_2018_idioms)]
+#![warn(clippy::all)]
+
 mod cardrender;
 mod colorandfill;
 mod filling_nodes;
