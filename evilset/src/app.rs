@@ -108,7 +108,7 @@ impl epi::App for EvilSetApp {
     /// Called once before the first frame.
     fn setup(
         &mut self,
-        _ctx: &egui::Context,
+        ctx: &egui::Context,
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
@@ -119,7 +119,7 @@ impl epi::App for EvilSetApp {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
 
-        // TODO: Start rendering the standard deck
+        self.background_rendering.standard_deck = Some(standard_deck_texture_promise(ctx));
     }
 
     /// Called by the frame work to save state before shutdown.
@@ -253,8 +253,6 @@ impl EvilSetApp {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
             ui.horizontal(|ui| {
                 ui.with_layout(Layout::left_to_right(), |ui| {
                     *ui.visuals_mut() = match persistent_data.theme {
@@ -294,31 +292,7 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    // let deck = Deck::new_standard_deck();
-                    let deck = Deck::new_random_deck();
-                    let active_set_deck: ActiveDeck<SetGame> = ActiveDeck::start_play(&deck);
-                    let active_deck = GameDeck::Set(active_set_deck);
-
-                    let cloned_context = ctx.clone();
-
-                    let rendering_func = move || {
-                        let filling_nodes = cardgen::generate_filling_nodes();
-                        generate_deck_textures(&deck, &filling_nodes, &cloned_context)
-                    };
-                    background_rendering.standard_deck = Some(Promise::spawn_thread(
-                        "Background rendering",
-                        rendering_func,
-                    ));
-
                     *game_state = GameState::Set;
-
-                    *game_data = Some(ActiveGameData {
-                        active_deck,
-                        card_textures: None,
-                        selected: HashSet::new(),
-                        game_started: None,
-                    });
-
                     println!("Set selected");
                 }
 
@@ -369,7 +343,8 @@ impl EvilSetApp {
             background_rendering,
         } = self;
 
-        if let Some(rendering_promise) = &background_rendering.standard_deck {
+        if game_data.is_none() {
+            let rendering_promise = &background_rendering.standard_deck.as_ref().unwrap();
             match rendering_promise.ready() {
                 None => {
                     egui::CentralPanel::default().show(ctx, |ui| {
@@ -382,25 +357,43 @@ impl EvilSetApp {
                     });
                 }
                 Some(card_textures) => {
-                    if let Some(active_game_data) = game_data {
-                        active_game_data.card_textures = Some(card_textures.clone());
-                    } else {
-                        unreachable!();
-                    }
+                    let deck = Deck::new_standard_deck();
+                    let active_set_deck: ActiveDeck<SetGame> = ActiveDeck::start_play(&deck);
+                    let active_deck = GameDeck::Set(active_set_deck);
 
-                    background_rendering.standard_deck = None;
+                    *game_data = Some(ActiveGameData {
+                        active_deck,
+                        card_textures: Some(card_textures.clone()),
+                        selected: HashSet::new(),
+                        game_started: Some(Instant::now()),
+                    });
                 }
             }
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
                 // The central panel the region left after adding TopPanel's and SidePanel's
 
-                ui.vertical_centered(|ui| {
-                    ui.heading(
-                        RichText::new("Set")
-                            .font(FontId::proportional(28.0))
-                            .color(crate::themes::thematic_blue(&persistent_data.theme)),
-                    );
+                ui.horizontal(|ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.heading(
+                            RichText::new("Set")
+                                .font(FontId::proportional(28.0))
+                                .color(crate::themes::thematic_blue(&persistent_data.theme)),
+                        );
+                    });
+
+                    ui.with_layout(Layout::right_to_left(), |ui| {
+                        ui.label(
+                            RichText::new(format!(
+                                "⏱ {}",
+                                standard_format(
+                                    game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                )
+                            ))
+                            .font(FontId::proportional(28.0)),
+                        );
+                        ctx.request_repaint();
+                    });
                 });
 
                 ui.add_space(10.0);
@@ -421,9 +414,6 @@ impl EvilSetApp {
                         let available_height = ui.available_height();
 
                         let card_textures = card_textures.as_ref().unwrap();
-
-                        // ui.spacing_mut().item_spacing = [1.0, 1.0].into();
-                        // dbg!(ui.spacing());
 
                         ui.columns(3, |columns| {
                             for (index, card) in active_deck.in_play.iter().enumerate() {
@@ -449,6 +439,7 @@ impl EvilSetApp {
     }
 }
 
+// TODO: Also have a minimum height
 fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
     let scaling_with_width = {
         let new_width = frame_width / 4.0;
@@ -490,4 +481,44 @@ fn generate_deck_textures(
     }
 
     card_textures
+}
+
+// When compiling natively.
+#[cfg(not(target_arch = "wasm32"))]
+fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
+    let deck = Deck::new_standard_deck();
+
+    let cloned_context = ctx.clone();
+
+    let rendering_func = move || {
+        let filling_nodes = cardgen::generate_filling_nodes();
+        generate_deck_textures(&deck, &filling_nodes, &cloned_context)
+    };
+    Promise::spawn_thread("Background standard deck rendering", rendering_func)
+}
+
+// When compiling for web. Wasm does not have thread support yet, so the operation blocks.
+#[cfg(target_arch = "wasm32")]
+fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
+    let deck = Deck::new_standard_deck();
+
+    let cloned_context = ctx.clone();
+
+    let (sender, promise) = Promise::new();
+
+    let filling_nodes = cardgen::generate_filling_nodes();
+    sender.send(generate_deck_textures(
+        &deck,
+        &filling_nodes,
+        &cloned_context,
+    ));
+
+    promise
+}
+
+fn standard_format(duration: Duration) -> String {
+    let seconds = duration.as_secs() % 60;
+    let minutes = (duration.as_secs() / 60) % 60;
+
+    format!("{:02}:{:02}", minutes, seconds)
 }
