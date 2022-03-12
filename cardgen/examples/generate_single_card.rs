@@ -13,7 +13,7 @@ fn main() {
         num: SetNum::Six,
         color: SetColor::Purple,
         shape: Shape::Squiggle,
-        filling: Filling::Solid,
+        filling: Filling::DiagonalStriped,
     };
 
     let pixmap = render_card(card, &filling_nodes);

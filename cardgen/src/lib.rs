@@ -27,7 +27,7 @@ pub enum Filling {
     Hollow,
     Solid,
     HorizontalStriped,
-    Wavy,
+    DiagonalStriped,
     Checkerboard,
     VerticalStriped,
 }
@@ -38,7 +38,7 @@ pub enum SetColor {
     Red,
     Green,
     Black,
-    Yellow,
+    Brown,
     Blue,
 }
 
@@ -76,7 +76,7 @@ impl Filling {
             0 => Some(Filling::Hollow),
             1 => Some(Filling::Solid),
             2 => Some(Filling::HorizontalStriped),
-            3 => Some(Filling::Wavy),
+            3 => Some(Filling::DiagonalStriped),
             4 => Some(Filling::Checkerboard),
             5 => Some(Filling::VerticalStriped),
             _ => None,
@@ -91,7 +91,7 @@ impl SetColor {
             1 => Some(SetColor::Red),
             2 => Some(SetColor::Green),
             3 => Some(SetColor::Black),
-            4 => Some(SetColor::Yellow),
+            4 => Some(SetColor::Brown),
             5 => Some(SetColor::Blue),
             _ => None,
         }

@@ -9,8 +9,8 @@ impl From<SetColor> for Color {
             SetColor::Red => Color::new_rgb(255, 1, 1),
             SetColor::Green => Color::new_rgb(0, 128, 2),
             SetColor::Black => Color::new_rgb(0, 0, 0),
-            SetColor::Yellow => Color::new_rgb(255, 215, 0),
-            SetColor::Blue => Color::new_rgb(0, 255, 255),
+            SetColor::Brown => Color::new_rgb(150, 75, 0),
+            SetColor::Blue => Color::new_rgb(0, 0, 255),
         }
     }
 }
@@ -75,7 +75,7 @@ pub(crate) fn color_shape(
 
     // Populate filling pattern
     match filling {
-        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::Wavy => {
+        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::DiagonalStriped => {
             let filling_node = filling_node.unwrap();
             let mut filling_node_child = filling_node.first_child().unwrap();
             let mut node_value = filling_node_child.borrow_mut();

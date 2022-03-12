@@ -33,8 +33,8 @@ pub fn generate_filling_nodes() -> Option<FillingNodes> {
     array_vec.push(Some(vertical_striped_node));
 
     // Loading wavy pattern
-    let wavy_svg = include_bytes!("../assets/fillings/wavy.svg");
-    let rtree = usvg::Tree::from_data(wavy_svg, &opt.to_ref()).ok()?;
+    let diagonalstriped_svg = include_bytes!("../assets/fillings/diagonalstriped.svg");
+    let rtree = usvg::Tree::from_data(diagonalstriped_svg, &opt.to_ref()).ok()?;
     let wavy_node = rtree.root().first_child()?.first_child()?.make_deep_copy();
     array_vec.push(Some(wavy_node));
 
@@ -50,12 +50,12 @@ pub(crate) fn get_filling_node(filling: Filling, nodes: &FillingNodes) -> Option
         Filling::HorizontalStriped => 2,
         Filling::Checkerboard => 3,
         Filling::VerticalStriped => 4,
-        Filling::Wavy => 5,
+        Filling::DiagonalStriped => 5,
     };
 
     match filling {
         Filling::Hollow | Filling::Solid => None,
-        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::Wavy => {
+        Filling::HorizontalStriped | Filling::VerticalStriped | Filling::DiagonalStriped => {
             let filling_node = nodes.array[filling_node_index].as_ref().unwrap();
             let filling_node_child = filling_node.first_child().unwrap();
 
