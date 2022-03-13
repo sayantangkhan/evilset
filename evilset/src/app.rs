@@ -1,14 +1,19 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![warn(clippy::all)]
 
+#[cfg(not(target_arch = "wasm32"))]
+use foreground_render as render;
+
+#[cfg(target_arch = "wasm32")]
+use foreground_render as render;
+
 use crate::themes::AppTheme;
-use cardgen::{render_card, CardVisualAttr, FillingNodes};
+use cardgen::CardVisualAttr;
 use eframe::{
     egui::{Button, FontId, ImageButton, Layout, RichText},
     epaint::TextureHandle,
     epi,
 };
-use poll_promise::Promise;
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
 use std::{
     collections::{HashMap, HashSet},
@@ -45,7 +50,7 @@ impl Default for PersistentGameData {
     }
 }
 
-enum GameState {
+enum AppState {
     Menu,
     Help,
     Set,
@@ -67,12 +72,12 @@ struct ActiveGameData {
     game_started: Option<Instant>,
 }
 
-type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
+pub(crate) type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
 
 #[derive(Default)]
 struct RenderingPromises {
-    standard_deck: Option<Promise<TextureMap>>,
-    randomized_deck: Option<Promise<TextureMap>>,
+    standard_deck: Option<render::Promise<TextureMap>>,
+    randomized_deck: Option<render::Promise<TextureMap>>,
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -82,7 +87,7 @@ pub struct EvilSetApp {
     // Game data and preferences that can be loaded from a file
     persistent_data: PersistentGameData,
     // Tracks whether the app is in the selection menu or one of the four games.
-    game_state: GameState,
+    app_state: AppState,
     // State of currently active game
     game_data: Option<ActiveGameData>,
     // Background rendering promises
@@ -93,7 +98,7 @@ impl Default for EvilSetApp {
     fn default() -> Self {
         Self {
             persistent_data: PersistentGameData::default(),
-            game_state: GameState::Menu,
+            app_state: AppState::Menu,
             game_data: None,
             background_rendering: RenderingPromises::default(),
         }
@@ -119,7 +124,7 @@ impl epi::App for EvilSetApp {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
 
-        self.background_rendering.standard_deck = Some(standard_deck_texture_promise(ctx));
+        self.background_rendering.standard_deck = Some(render::standard_deck_texture_promise(ctx));
     }
 
     /// Called by the frame work to save state before shutdown.
@@ -134,16 +139,16 @@ impl epi::App for EvilSetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         let Self {
             persistent_data,
-            game_state,
+            app_state: app_state,
             game_data,
             background_rendering,
         } = self;
 
         ctx.set_visuals(crate::themes::generate_base_theme(&persistent_data.theme));
 
-        match *game_state {
-            GameState::Menu => self.update_menu(ctx, frame),
-            GameState::Set => self.play_set(ctx, frame),
+        match *app_state {
+            AppState::Menu => self.update_menu(ctx, frame),
+            AppState::Set => self.play_set(ctx, frame),
             // &mut GameState::ShowDeck => self.show_deck(ctx, frame),
             _ => todo!(),
         }
@@ -155,7 +160,7 @@ impl EvilSetApp {
     fn update_menu(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         let Self {
             persistent_data,
-            game_state,
+            app_state,
             game_data,
             background_rendering,
         } = self;
@@ -292,7 +297,7 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    *game_state = GameState::Set;
+                    *app_state = AppState::Set;
                     println!("Set selected");
                 }
 
@@ -304,7 +309,7 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    *game_state = GameState::EvilSet;
+                    *app_state = AppState::EvilSet;
                     println!("Evil Set selected");
                 }
 
@@ -316,7 +321,7 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    *game_state = GameState::UltraSet;
+                    *app_state = AppState::UltraSet;
                     println!("Ultra Set selected");
                 }
 
@@ -328,7 +333,7 @@ impl EvilSetApp {
                     ))
                     .clicked()
                 {
-                    *game_state = GameState::EvilUltraSet;
+                    *app_state = AppState::EvilUltraSet;
                     println!("Evil Ultra Set selected");
                 }
             })
@@ -338,13 +343,13 @@ impl EvilSetApp {
     fn play_set(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         let Self {
             persistent_data,
-            game_state,
+            app_state,
             game_data,
             background_rendering,
         } = self;
 
         if game_data.is_none() {
-            let rendering_promise = &background_rendering.standard_deck.as_ref().unwrap();
+            let rendering_promise = background_rendering.standard_deck.as_ref().unwrap();
             match rendering_promise.ready() {
                 None => {
                     egui::CentralPanel::default().show(ctx, |ui| {
@@ -370,6 +375,9 @@ impl EvilSetApp {
                 }
             }
         } else {
+            // Handling the keyboard events
+            keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+
             egui::CentralPanel::default().show(ctx, |ui| {
                 // The central panel the region left after adding TopPanel's and SidePanel's
 
@@ -418,15 +426,25 @@ impl EvilSetApp {
                         ui.columns(3, |columns| {
                             for (index, card) in active_deck.in_play.iter().enumerate() {
                                 let texture = card_textures.get(card).unwrap();
-                                let button = &mut columns[index % 3].add(
-                                    ImageButton::new(
-                                        texture,
-                                        scale_card(available_width, available_height),
-                                    ), // .selected(*selected),
+
+                                let mut button = ImageButton::new(
+                                    texture,
+                                    scale_card(available_width, available_height),
                                 );
-                                if button.clicked() {
+
+                                if selected.contains(&index) {
+                                    button = button.selected(true);
+                                }
+
+                                let response = &mut columns[index % 3].add(button);
+
+                                if response.clicked() {
                                     dbg!(card);
-                                    // *selected = !(*selected);
+                                    if selected.contains(&index) {
+                                        selected.remove(&index);
+                                    } else {
+                                        selected.insert(index);
+                                    }
                                 }
                             }
                         });
@@ -460,16 +478,30 @@ fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
     }
 }
 
+fn standard_format(duration: Duration) -> String {
+    let seconds = duration.as_secs() % 60;
+    let minutes = (duration.as_secs() / 60) % 60;
+
+    format!("{:02}:{:02}", minutes, seconds)
+}
+
+fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData) {
+    let events = &context.input().events;
+    dbg!(events);
+
+    // TODO: limit to appropriate number of selectable cards
+}
+
 fn generate_deck_textures(
-    deck: &Deck,
-    filling_nodes: &Option<FillingNodes>,
+    deck: &setengine::Deck,
+    filling_nodes: &Option<cardgen::FillingNodes>,
     ctx: &egui::Context,
 ) -> TextureMap {
     // Generate the images for a deck
     let mut card_textures = HashMap::new();
 
     for (coord, visattr) in &deck.cards {
-        let pixmap = render_card(*visattr, filling_nodes.as_ref().unwrap());
+        let pixmap = cardgen::render_card(*visattr, filling_nodes.as_ref().unwrap());
 
         let image = egui::ColorImage::from_rgba_unmultiplied(
             [pixmap.width() as _, pixmap.height() as _],
@@ -483,42 +515,82 @@ fn generate_deck_textures(
     card_textures
 }
 
-// When compiling natively.
+// When compiling natively
 #[cfg(not(target_arch = "wasm32"))]
-fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
-    let deck = Deck::new_standard_deck();
+mod background_render {
+    use super::{generate_deck_textures, TextureMap};
+    pub use poll_promise::Promise;
 
-    let cloned_context = ctx.clone();
+    pub(super) fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
+        let deck = setengine::Deck::new_standard_deck();
 
-    let rendering_func = move || {
-        let filling_nodes = cardgen::generate_filling_nodes();
-        generate_deck_textures(&deck, &filling_nodes, &cloned_context)
-    };
-    Promise::spawn_thread("Background standard deck rendering", rendering_func)
+        let cloned_context = ctx.clone();
+
+        let rendering_func = move || {
+            let filling_nodes = cardgen::generate_filling_nodes();
+            generate_deck_textures(&deck, &filling_nodes, &cloned_context)
+        };
+        Promise::spawn_thread("Background standard deck rendering", rendering_func)
+    }
 }
 
-// When compiling for web. Wasm does not have thread support yet, so the operation blocks.
-#[cfg(target_arch = "wasm32")]
-fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
-    let deck = Deck::new_standard_deck();
+// When compiling for the web
+// #[cfg(target_arch = "wasm32")]
+mod foreground_render {
+    use super::{generate_deck_textures, TextureMap};
+    use std::cell::RefCell;
 
-    let cloned_context = ctx.clone();
+    pub(super) struct Promise<T> {
+        context: egui::Context,
+        closure: fn(egui::Context) -> T,
+        result: RefCell<Option<T>>,
+    }
 
-    let (sender, promise) = Promise::new();
+    impl<T> Promise<T> {
+        fn create(context: &egui::Context, closure: fn(egui::Context) -> T) -> Promise<T> {
+            Promise {
+                context: context.clone(),
+                closure,
+                result: RefCell::new(None),
+            }
+        }
 
-    let filling_nodes = cardgen::generate_filling_nodes();
-    sender.send(generate_deck_textures(
-        &deck,
-        &filling_nodes,
-        &cloned_context,
-    ));
+        fn apply(&self) {
+            let function = self.closure;
+            let function_out = function(self.context.clone());
 
-    promise
-}
+            *self.result.borrow_mut() = Some(function_out)
+        }
 
-fn standard_format(duration: Duration) -> String {
-    let seconds = duration.as_secs() % 60;
-    let minutes = (duration.as_secs() / 60) % 60;
+        pub(super) fn ready(&self) -> Option<&T> {
+            // let mut internal_result = *self.result.borrow_mut();
+            // match internal_result {
+            //     None => {
+            //         let function = self.closure;
+            //         let function_out = function(self.context.clone());
+            //         internal_result = Some(function_out);
+            //     }
+            //     _ => {}
+            // }
 
-    format!("{:02}:{:02}", minutes, seconds)
+            // *self.result.borrow()
+
+            if self.result.borrow().is_none() {
+                self.apply();
+            }
+
+            let t = self.result.borrow();
+            t
+        }
+    }
+
+    pub(super) fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
+        let rendering_func = |context| {
+            let deck = setengine::Deck::new_standard_deck();
+            let filling_nodes = cardgen::generate_filling_nodes();
+            generate_deck_textures(&deck, &filling_nodes, &context)
+        };
+
+        Promise::create(ctx, rendering_func)
+    }
 }

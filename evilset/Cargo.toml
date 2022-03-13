@@ -15,6 +15,8 @@ egui = {version = "0.17", features = ["multi_threaded"]}
 serde = { version = "1", features = ["derive"], optional = true }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 poll-promise = "0.1"
 
 [features]
