@@ -11,17 +11,18 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eframe = "0.17"
-egui = {version = "0.17", features = ["multi_threaded"]}
-serde = { version = "1", features = ["derive"], optional = true }
+egui = "0.17"
+serde = { version = "1", features = ["derive"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-poll-promise = "0.1"
+poll-promise = { version = "0.1", optional = true }
 
 [features]
-default = []
-persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
+default = ["eframe/persistence", "multi_threaded"]
+# To be used with Wayland, MacOS, and Windows clients
+multi_threaded = ["poll-promise", "egui/multi_threaded"]
+# To be used with X11 and Web clients
+single_threaded = ["egui/single_threaded"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"

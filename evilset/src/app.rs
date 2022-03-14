@@ -1,10 +1,10 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![warn(clippy::all)]
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "multi_threaded", not(feature = "single_threaded")))]
 use background_render as render;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(feature = "single_threaded")]
 use foreground_render as render;
 
 use crate::themes::AppTheme;
@@ -22,6 +22,7 @@ use std::{
 
 const TIMES_TO_DISPLAY: usize = 15;
 
+#[derive(serde::Deserialize, serde::Serialize)]
 struct PersistentGameData {
     // Light and dark themes
     theme: AppTheme,
@@ -29,6 +30,7 @@ struct PersistentGameData {
     times: Times,
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
 struct Times {
     set_times: Vec<Duration>,
     evilset_times: Vec<Duration>,
@@ -81,16 +83,19 @@ struct RenderingPromises {
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-// #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-// #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct EvilSetApp {
     // Game data and preferences that can be loaded from a file
     persistent_data: PersistentGameData,
     // Tracks whether the app is in the selection menu or one of the four games.
+    #[serde(skip)]
     app_state: AppState,
     // State of currently active game
+    #[serde(skip)]
     game_data: Option<ActiveGameData>,
     // Background rendering promises
+    #[serde(skip)]
     background_rendering: RenderingPromises,
 }
 
@@ -119,7 +124,6 @@ impl epi::App for EvilSetApp {
     ) {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        #[cfg(feature = "persistence")]
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
@@ -129,7 +133,6 @@ impl epi::App for EvilSetApp {
 
     /// Called by the frame work to save state before shutdown.
     /// Note that you must enable the `persistence` feature for this to work.
-    #[cfg(feature = "persistence")]
     fn save(&mut self, storage: &mut dyn epi::Storage) {
         epi::set_value(storage, epi::APP_KEY, self);
     }
@@ -516,7 +519,7 @@ fn generate_deck_textures(
 }
 
 // When compiling natively
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "multi_threaded", not(feature = "single_threaded")))]
 mod background_render {
     use super::{generate_deck_textures, TextureMap};
     pub use poll_promise::Promise;
@@ -535,7 +538,7 @@ mod background_render {
 }
 
 // When compiling for the web
-#[cfg(target_arch = "wasm32")]
+#[cfg(feature = "single_threaded")]
 mod foreground_render {
     use super::{generate_deck_textures, TextureMap};
 
