@@ -2,7 +2,7 @@
 #![warn(clippy::all)]
 
 #[cfg(not(target_arch = "wasm32"))]
-use foreground_render as render;
+use background_render as render;
 
 #[cfg(target_arch = "wasm32")]
 use foreground_render as render;
@@ -349,7 +349,7 @@ impl EvilSetApp {
         } = self;
 
         if game_data.is_none() {
-            let rendering_promise = background_rendering.standard_deck.as_ref().unwrap();
+            let rendering_promise = background_rendering.standard_deck.as_mut().unwrap();
             match rendering_promise.ready() {
                 None => {
                     egui::CentralPanel::default().show(ctx, |ui| {
@@ -535,15 +535,14 @@ mod background_render {
 }
 
 // When compiling for the web
-// #[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 mod foreground_render {
     use super::{generate_deck_textures, TextureMap};
-    use std::cell::RefCell;
 
     pub(super) struct Promise<T> {
         context: egui::Context,
         closure: fn(egui::Context) -> T,
-        result: RefCell<Option<T>>,
+        result: Option<T>,
     }
 
     impl<T> Promise<T> {
@@ -551,36 +550,17 @@ mod foreground_render {
             Promise {
                 context: context.clone(),
                 closure,
-                result: RefCell::new(None),
+                result: None,
             }
         }
 
-        fn apply(&self) {
-            let function = self.closure;
-            let function_out = function(self.context.clone());
-
-            *self.result.borrow_mut() = Some(function_out)
-        }
-
-        pub(super) fn ready(&self) -> Option<&T> {
-            // let mut internal_result = *self.result.borrow_mut();
-            // match internal_result {
-            //     None => {
-            //         let function = self.closure;
-            //         let function_out = function(self.context.clone());
-            //         internal_result = Some(function_out);
-            //     }
-            //     _ => {}
-            // }
-
-            // *self.result.borrow()
-
-            if self.result.borrow().is_none() {
-                self.apply();
+        pub(super) fn ready(&mut self) -> &Option<T> {
+            if self.result.is_none() {
+                let function = self.closure;
+                self.result = Some(function(self.context.clone()));
             }
 
-            let t = self.result.borrow();
-            t
+            &self.result
         }
     }
 
