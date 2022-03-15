@@ -10,8 +10,8 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eframe = "0.17"
-egui = "0.17"
+eframe = { git = "https://github.com/emilk/egui", rev = "002158050bcbc0ac23b290f3a1dccf0328801e61" }
+egui = { git = "https://github.com/emilk/egui", rev = "002158050bcbc0ac23b290f3a1dccf0328801e61" }
 serde = { version = "1", features = ["derive"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
