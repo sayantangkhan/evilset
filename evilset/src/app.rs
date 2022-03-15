@@ -14,13 +14,15 @@ use eframe::{
     epaint::TextureHandle,
     epi,
 };
+use instant::Instant;
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
 use std::{
     collections::{HashMap, HashSet},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 const TIMES_TO_DISPLAY: usize = 15;
+const APP_KEY: &str = "evilset_app";
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct PersistentGameData {
@@ -125,7 +127,7 @@ impl epi::App for EvilSetApp {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = _storage {
-            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
+            *self = epi::get_value(storage, APP_KEY).unwrap_or_default()
         }
 
         self.background_rendering.standard_deck = Some(render::standard_deck_texture_promise(ctx));
@@ -134,7 +136,12 @@ impl epi::App for EvilSetApp {
     /// Called by the frame work to save state before shutdown.
     /// Note that you must enable the `persistence` feature for this to work.
     fn save(&mut self, storage: &mut dyn epi::Storage) {
-        epi::set_value(storage, epi::APP_KEY, self);
+        epi::set_value(storage, APP_KEY, self);
+    }
+
+    /// Save every second
+    fn auto_save_interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(1)
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
@@ -142,7 +149,7 @@ impl epi::App for EvilSetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
         let Self {
             persistent_data,
-            app_state: app_state,
+            app_state,
             game_data,
             background_rendering,
         } = self;

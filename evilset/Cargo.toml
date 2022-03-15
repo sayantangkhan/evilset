@@ -16,6 +16,7 @@ serde = { version = "1", features = ["derive"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
 poll-promise = { version = "0.1", optional = true }
+instant = { version = "0.1", features = [ "stdweb" ] }
 
 [features]
 default = ["eframe/persistence", "multi_threaded"]
