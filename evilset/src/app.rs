@@ -1,12 +1,20 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![warn(clippy::all)]
 
-#[cfg(all(feature = "multi_threaded", not(feature = "single_threaded")))]
+// Platform specific imports
+#[cfg(not(target_arch = "wasm32"))]
 use background_render as render;
 
-#[cfg(feature = "single_threaded")]
+#[cfg(target_arch = "wasm32")]
 use foreground_render as render;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+
+#[cfg(target_arch = "wasm32")]
+use instant::Instant;
+
+// Platform independent imports
 use crate::themes::AppTheme;
 use cardgen::CardVisualAttr;
 use eframe::{
@@ -14,7 +22,6 @@ use eframe::{
     epaint::TextureHandle,
     epi,
 };
-use instant::Instant;
 use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
 use std::{
     collections::{HashMap, HashSet},
@@ -142,6 +149,11 @@ impl epi::App for EvilSetApp {
     /// Save every second
     fn auto_save_interval(&self) -> std::time::Duration {
         std::time::Duration::from_secs(1)
+    }
+
+    /// Increasing the size of web canvas
+    fn max_size_points(&self) -> egui::Vec2 {
+        (2160., 1620.).into()
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
@@ -526,7 +538,7 @@ fn generate_deck_textures(
 }
 
 // When compiling natively
-#[cfg(all(feature = "multi_threaded", not(feature = "single_threaded")))]
+#[cfg(not(target_arch = "wasm32"))]
 mod background_render {
     use super::{generate_deck_textures, TextureMap};
     pub use poll_promise::Promise;
@@ -545,13 +557,14 @@ mod background_render {
 }
 
 // When compiling for the web
-#[cfg(feature = "single_threaded")]
+#[cfg(target_arch = "wasm32")]
 mod foreground_render {
     use super::{generate_deck_textures, TextureMap};
 
     pub(super) struct Promise<T> {
         context: egui::Context,
         closure: fn(egui::Context) -> T,
+        polled_once: bool,
         result: Option<T>,
     }
 
@@ -560,17 +573,23 @@ mod foreground_render {
             Promise {
                 context: context.clone(),
                 closure,
+                polled_once: false,
                 result: None,
             }
         }
 
         pub(super) fn ready(&mut self) -> &Option<T> {
-            if self.result.is_none() {
-                let function = self.closure;
-                self.result = Some(function(self.context.clone()));
-            }
+            if self.polled_once {
+                if self.result.is_none() {
+                    let function = self.closure;
+                    self.result = Some(function(self.context.clone()));
+                }
 
-            &self.result
+                &self.result
+            } else {
+                self.polled_once = true;
+                &self.result
+            }
         }
     }
 

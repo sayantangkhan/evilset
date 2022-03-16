@@ -15,16 +15,14 @@ egui = { git = "https://github.com/emilk/egui", rev = "002158050bcbc0ac23b290f3a
 serde = { version = "1", features = ["derive"] }
 cardgen = { path = "../cardgen" }
 setengine = { path = "../setengine" }
-poll-promise = { version = "0.1", optional = true }
-instant = { version = "0.1", features = [ "stdweb" ] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+poll-promise = "0.1"
 
 [features]
-default = ["eframe/persistence", "multi_threaded"]
-# To be used with Wayland, MacOS, and Windows clients
-multi_threaded = ["poll-promise", "egui/multi_threaded"]
-# To be used with X11 and Web clients
-single_threaded = ["egui/single_threaded"]
+default = ["eframe/persistence", "egui/multi_threaded"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 tracing-wasm = "0.2"
+instant = { version = "0.1", features = [ "stdweb" ] }

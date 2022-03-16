@@ -4,7 +4,7 @@ script_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$script_path"
 
 OPEN=false
-FAST=false
+FAST=true
 BUILD=debug
 
 while test $# -gt 0; do
@@ -45,9 +45,9 @@ rm -f "web/${CRATE_NAME_SNAKE_CASE}_bg.wasm"
 
 echo "Building rust…"
 if [[ "${BUILD}" == "release" ]]; then
-    cargo build -p "${CRATE_NAME}" --features "single_threaded" --release --lib --target wasm32-unknown-unknown
+    cargo build -p "${CRATE_NAME}" --release --lib --target wasm32-unknown-unknown
 elif [[ "${BUILD}" == "debug" ]]; then
-    cargo build -p "${CRATE_NAME}" --features "single_threaded" --lib --target wasm32-unknown-unknown
+    cargo build -p "${CRATE_NAME}" --lib --target wasm32-unknown-unknown
 fi
 
 # Get the output directory (in the workspace it is in another location)

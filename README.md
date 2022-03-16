@@ -11,11 +11,9 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 - [x] Async rendering (other methods for wasm)
 - [x] Layout buttons in a 3 column grid
 - [x] Make state persist across runs
-- [ ] Get rid of single_threaded vs multi_threaded feature and change cfg's based on target
 - [ ] Implement a timer
 - [ ] Enable quitting a game
 - [ ] Enable hints
-- [ ] Play sounds
 - [ ] Better window controls
 
 ### Code cleanup
