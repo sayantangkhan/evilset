@@ -10,8 +10,8 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 - [x] Tweak patterns and colors to work well with the color scheme (add brown and blue, and get rid of wavy pattern)
 - [x] Async rendering (other methods for wasm)
 - [x] Layout buttons in a 3 column grid
-- [x] Add a feature for single threaded vs multi-threaded (x11 and wasm vs the rest)
 - [x] Make state persist across runs
+- [ ] Get rid of single_threaded vs multi_threaded feature and change cfg's based on target
 - [ ] Implement a timer
 - [ ] Enable quitting a game
 - [ ] Enable hints
