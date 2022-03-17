@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![warn(clippy::all)]
 
+mod backend_interface;
+mod utility_functions;
+
 // Platform specific imports
 #[cfg(not(target_arch = "wasm32"))]
 use background_render as render;
@@ -16,9 +19,10 @@ use instant::Instant;
 
 // Platform independent imports
 use crate::themes::AppTheme;
+use backend_interface as backend;
 use cardgen::CardVisualAttr;
 use eframe::{
-    egui::{Button, FontId, ImageButton, Layout, RichText},
+    egui::{Button, FontId, ImageButton, Key, Layout, RichText},
     epaint::TextureHandle,
     epi,
 };
@@ -27,9 +31,39 @@ use std::{
     collections::{HashMap, HashSet},
     time::Duration,
 };
+use utility_functions as util;
 
 const TIMES_TO_DISPLAY: usize = 15;
 const APP_KEY: &str = "evilset_app";
+
+lazy_static! {
+    static ref KEYBINDINGS: HashMap<Key, usize> = [
+        (Key::Num1, 0),
+        (Key::Num2, 1),
+        (Key::Num3, 2),
+        (Key::Q, 3),
+        (Key::W, 4),
+        (Key::E, 5),
+        (Key::A, 6),
+        (Key::S, 7),
+        (Key::D, 8),
+        (Key::Z, 9),
+        (Key::X, 10),
+        (Key::C, 11),
+        (Key::Num4, 12),
+        (Key::Num5, 13),
+        (Key::Num6, 14),
+        (Key::R, 15),
+        (Key::T, 16),
+        (Key::Y, 17),
+        (Key::F, 18),
+        (Key::G, 19),
+        (Key::H, 20),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+}
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct PersistentGameData {
@@ -100,6 +134,9 @@ pub struct EvilSetApp {
     // Tracks whether the app is in the selection menu or one of the four games.
     #[serde(skip)]
     app_state: AppState,
+    // Tracks previous state to perform cleanups safely
+    #[serde(skip)]
+    previous_state: Option<AppState>,
     // State of currently active game
     #[serde(skip)]
     game_data: Option<ActiveGameData>,
@@ -113,6 +150,7 @@ impl Default for EvilSetApp {
         Self {
             persistent_data: PersistentGameData::default(),
             app_state: AppState::Menu,
+            previous_state: None,
             game_data: None,
             background_rendering: RenderingPromises::default(),
         }
@@ -162,6 +200,7 @@ impl epi::App for EvilSetApp {
         let Self {
             persistent_data,
             app_state,
+            previous_state,
             game_data,
             background_rendering,
         } = self;
@@ -183,9 +222,18 @@ impl EvilSetApp {
         let Self {
             persistent_data,
             app_state,
+            previous_state,
             game_data,
             background_rendering,
         } = self;
+
+        match previous_state {
+            Some(_) => {
+                *game_data = None;
+                *previous_state = None;
+            }
+            None => {}
+        };
 
         egui::SidePanel::right("side_panel")
             // .default_width(160.0)
@@ -366,6 +414,7 @@ impl EvilSetApp {
         let Self {
             persistent_data,
             app_state,
+            previous_state,
             game_data,
             background_rendering,
         } = self;
@@ -404,6 +453,19 @@ impl EvilSetApp {
                 // The central panel the region left after adding TopPanel's and SidePanel's
 
                 ui.horizontal(|ui| {
+                    ui.with_layout(Layout::left_to_right(), |ui| {
+                        let close_button = ui.add(Button::new(RichText::new("❌").size(25.0)));
+                        if close_button.clicked() {
+                            *app_state = AppState::Menu;
+                            *previous_state = Some(AppState::Set);
+                        }
+
+                        let hint_button = ui.add(Button::new(RichText::new("❓").size(25.0)));
+                        if hint_button.clicked() {
+                            println!("Asked for hint");
+                        }
+                    });
+
                     ui.vertical_centered(|ui| {
                         ui.heading(
                             RichText::new("Set")
@@ -416,7 +478,7 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new(format!(
                                 "⏱ {}",
-                                standard_format(
+                                util::standard_format(
                                     game_data.as_ref().unwrap().game_started.unwrap().elapsed()
                                 )
                             ))
@@ -439,19 +501,19 @@ impl EvilSetApp {
                         selected,
                         game_started,
                     } = game_data.as_mut().unwrap();
-                    if let GameDeck::Set(active_deck) = active_deck {
+                    if let GameDeck::Set(active_set_deck) = &active_deck {
                         let available_width = ui.available_width();
                         let available_height = ui.available_height();
 
                         let card_textures = card_textures.as_ref().unwrap();
 
                         ui.columns(3, |columns| {
-                            for (index, card) in active_deck.in_play.iter().enumerate() {
+                            for (index, card) in active_set_deck.in_play.iter().enumerate() {
                                 let texture = card_textures.get(card).unwrap();
 
                                 let mut button = ImageButton::new(
                                     texture,
-                                    scale_card(available_width, available_height),
+                                    util::scale_card(available_width, available_height),
                                 );
 
                                 if selected.contains(&index) {
@@ -462,11 +524,7 @@ impl EvilSetApp {
 
                                 if response.clicked() {
                                     dbg!(card);
-                                    if selected.contains(&index) {
-                                        selected.remove(&index);
-                                    } else {
-                                        selected.insert(index);
-                                    }
+                                    backend::select_index(index, &active_deck, selected);
                                 }
                             }
                         });
@@ -479,39 +537,25 @@ impl EvilSetApp {
     }
 }
 
-// TODO: Also have a minimum height
-fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
-    let scaling_with_width = {
-        let new_width = frame_width / 4.0;
-        let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
-        (new_width, new_height)
-    };
-
-    let scaling_with_height = {
-        let new_height = frame_height / 5.0;
-        let new_width = (cardgen::CARDWIDTH as f32) * (new_height / (cardgen::CARDHEIGHT as f32));
-        (new_width, new_height)
-    };
-
-    if scaling_with_height.0 < scaling_with_width.0 {
-        scaling_with_height
-    } else {
-        scaling_with_width
-    }
-}
-
-fn standard_format(duration: Duration) -> String {
-    let seconds = duration.as_secs() % 60;
-    let minutes = (duration.as_secs() / 60) % 60;
-
-    format!("{:02}:{:02}", minutes, seconds)
-}
-
 fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData) {
     let events = &context.input().events;
-    dbg!(events);
+    let active_deck = &game_data.active_deck;
+    let selected_cards = &mut game_data.selected;
 
-    // TODO: limit to appropriate number of selectable cards
+    for event in events {
+        if let egui::Event::Key {
+            key,
+            pressed,
+            modifiers: _,
+        } = event
+        {
+            if !pressed {
+                if let Some(index) = KEYBINDINGS.get(key) {
+                    backend::select_index(*index, active_deck, selected_cards);
+                }
+            }
+        }
+    }
 }
 
 fn generate_deck_textures(
