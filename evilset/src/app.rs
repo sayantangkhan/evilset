@@ -35,6 +35,7 @@ use utility_functions as util;
 
 const TIMES_TO_DISPLAY: usize = 15;
 const APP_KEY: &str = "evilset_app";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 lazy_static! {
     static ref KEYBINDINGS: HashMap<Key, usize> = [
@@ -490,6 +491,16 @@ impl EvilSetApp {
                                 )
                             ))
                             .font(FontId::proportional(28.0)),
+                        );
+
+                        let cards_left = match &game_data.as_ref().unwrap().active_deck {
+                            GameDeck::Set(ad) => ad.in_deck.len(),
+                            GameDeck::UltraSet(ad) => ad.in_deck.len(),
+                        };
+
+                        ui.label(
+                            RichText::new(format!("{} cards left", cards_left))
+                                .font(FontId::proportional(23.0)),
                         );
                         ctx.request_repaint();
                     });

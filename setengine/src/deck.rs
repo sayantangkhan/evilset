@@ -11,7 +11,7 @@ pub struct Deck {
 #[derive(Clone)]
 pub struct ActiveDeck<T> {
     pub in_play: Vec<(CardCoordinates, CardVisualAttr)>,
-    in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
+    pub in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
     _game_type: PhantomData<T>,
 }
 
@@ -45,12 +45,21 @@ impl<T: GeneralizedSetGame> ActiveDeck<T> {
             for index in selection {
                 selected_cards.push(*self.in_play.get(*index)?);
             }
+            // TODO: Check removal code carefully
             if T::is_generalized_set(&selected_cards) {
                 if self.in_deck.len() >= T::NUM_CARDS {
                     // Enough cards in deck to replace
-                    for index in selection {
-                        self.in_play[*index] = self.in_deck.pop().unwrap();
+                    if self.in_play.len() <= 12 {
+                        // Needs replacement
+                        for index in selection {
+                            self.in_play[*index] = self.in_deck.pop().unwrap();
+                        }
+                    } else {
+                        for index in selection {
+                            self.in_play.remove(*index);
+                        }
                     }
+
                     // Add more cards until in_play has generalized set
                     while !T::contains_generalized_set(&self.in_play) {
                         if self.in_deck.is_empty() {
