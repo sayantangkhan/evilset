@@ -16,7 +16,10 @@ impl AppTheme {
     }
 }
 
-pub(crate) fn generate_card_theme(app_theme: &AppTheme) -> Visuals {
+pub(crate) fn generate_card_theme(
+    app_theme: &AppTheme,
+    prev_frame: &Option<setengine::PlayResponse>,
+) -> Visuals {
     let mut theme = match app_theme {
         AppTheme::Light => Visuals::light(),
         AppTheme::Dark => Visuals::dark(),
@@ -41,6 +44,19 @@ pub(crate) fn generate_card_theme(app_theme: &AppTheme) -> Visuals {
     let selection_theme = &mut theme.selection;
     if let AppTheme::Dark = app_theme {
         selection_theme.bg_fill = Color32::LIGHT_BLUE;
+    }
+
+    // Changing selection color based on response
+    if let Some(response) = prev_frame {
+        match response {
+            setengine::PlayResponse::ValidPlay => {
+                selection_theme.bg_fill = Color32::LIGHT_GREEN;
+            }
+            setengine::PlayResponse::InvalidPlay => {
+                selection_theme.bg_fill = Color32::LIGHT_RED;
+            }
+            setengine::PlayResponse::GameOver => {}
+        }
     }
 
     theme

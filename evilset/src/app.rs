@@ -26,7 +26,7 @@ use eframe::{
     epaint::TextureHandle,
     epi,
 };
-use setengine::{ActiveDeck, CardCoordinates, Deck, SetGame, UltrasetGame};
+use setengine::{ActiveDeck, CardCoordinates, Deck, PlayResponse, SetGame, UltrasetGame};
 use std::{
     collections::{HashMap, HashSet},
     time::Duration,
@@ -115,6 +115,7 @@ struct ActiveGameData {
     card_textures: Option<TextureMap>,
     selected: HashSet<usize>,
     game_started: Option<Instant>,
+    prev_frame: Option<PlayResponse>,
 }
 
 pub(crate) type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
@@ -442,12 +443,18 @@ impl EvilSetApp {
                         card_textures: Some(card_textures.clone()),
                         selected: HashSet::new(),
                         game_started: Some(Instant::now()),
+                        prev_frame: None,
                     });
                 }
             }
         } else {
-            // Handling the keyboard events
-            keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+            // Checking if 3 cards have been selected, and if so, evaluating them for correctness
+            backend::evaluate_selection(game_data.as_mut().unwrap());
+
+            // Handling the keyboard events if nothing happened previous frame
+            if game_data.as_ref().unwrap().prev_frame.is_none() {
+                keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+            }
 
             egui::CentralPanel::default().show(ctx, |ui| {
                 // The central panel the region left after adding TopPanel's and SidePanel's
@@ -493,14 +500,17 @@ impl EvilSetApp {
                 ui.add_space(20.0);
 
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    *ui.visuals_mut() = crate::themes::generate_card_theme(&persistent_data.theme);
-
                     let ActiveGameData {
                         active_deck,
                         card_textures,
                         selected,
                         game_started,
+                        prev_frame,
                     } = game_data.as_mut().unwrap();
+
+                    *ui.visuals_mut() =
+                        crate::themes::generate_card_theme(&persistent_data.theme, prev_frame);
+
                     if let GameDeck::Set(active_set_deck) = &active_deck {
                         let available_width = ui.available_width();
                         let available_height = ui.available_height();
@@ -523,8 +533,9 @@ impl EvilSetApp {
                                 let response = &mut columns[index % 3].add(button);
 
                                 if response.clicked() {
-                                    dbg!(card);
-                                    backend::select_index(index, &active_deck, selected);
+                                    if prev_frame.is_none() {
+                                        backend::select_index(index, active_deck, selected);
+                                    }
                                 }
                             }
                         });
@@ -539,8 +550,9 @@ impl EvilSetApp {
 
 fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData) {
     let events = &context.input().events;
-    let active_deck = &game_data.active_deck;
+    let active_deck = &mut game_data.active_deck;
     let selected_cards = &mut game_data.selected;
+    let next_frames = &mut game_data.prev_frame;
 
     for event in events {
         if let egui::Event::Key {
