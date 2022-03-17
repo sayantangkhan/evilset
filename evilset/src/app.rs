@@ -549,7 +549,7 @@ fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData)
             modifiers: _,
         } = event
         {
-            if !pressed {
+            if *pressed {
                 if let Some(index) = KEYBINDINGS.get(key) {
                     backend::select_index(*index, active_deck, selected_cards);
                 }
