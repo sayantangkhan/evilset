@@ -111,6 +111,7 @@ struct ActiveGameData {
     selected: HashSet<usize>,
     game_started: Option<Instant>,
     prev_frame: Option<PlayResponse>,
+    asked_for_hint: bool,
 }
 
 pub(crate) type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
@@ -441,6 +442,7 @@ impl EvilSetApp {
                         selected: HashSet::new(),
                         game_started: Some(Instant::now()),
                         prev_frame: None,
+                        asked_for_hint: false,
                     });
                 }
             }
@@ -466,6 +468,7 @@ impl EvilSetApp {
 
                         let hint_button = ui.add(Button::new(RichText::new("❓").size(25.0)));
                         if hint_button.clicked() {
+                            backend::show_hint(game_data);
                             println!("Asked for hint");
                         }
                     });
@@ -510,6 +513,7 @@ impl EvilSetApp {
                         selected,
                         game_started,
                         prev_frame,
+                        asked_for_hint,
                     } = game_data.as_mut().unwrap();
 
                     *ui.visuals_mut() =

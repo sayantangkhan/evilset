@@ -3,6 +3,7 @@ use crate::{
     selection_is_set, selection_is_ultraset,
 };
 use cardgen::{generate_random_attributes, generate_standard_attributes, CardVisualAttr};
+use itertools::Itertools;
 use rand::prelude::*;
 
 use crate::CardCoordinates;
@@ -67,14 +68,39 @@ impl GameDeck {
         GameDeck::UltraSet(ActiveDeck { in_play, in_deck })
     }
 
-    /// Returns indices of a set in the cards currently in play
-    pub fn get_set_hint(&self) -> Vec<usize> {
-        todo!()
+    /// Returns indices of 2/3 cards that form set/ultraset after completing with one more card
+    pub fn get_hint(&self) -> Vec<usize> {
+        match self {
+            &Self::Set(_) => self.get_set_hint(),
+            &Self::UltraSet(_) => self.get_ultraset_hint(),
+        }
     }
 
-    /// Returns indices of an ultraset in the cards currently in play
-    pub fn get_ultraset_hint(&self) -> Vec<usize> {
-        todo!()
+    /// Returns indices of two cards that complete to a set in the cards currently in play
+    fn get_set_hint(&self) -> Vec<usize> {
+        for triple in self.in_play().iter().enumerate().combinations(3) {
+            let card1 = (triple[0]).1 .0;
+            let card2 = (triple[1]).1 .0;
+            let card3 = (triple[2]).1 .0;
+            if crate::cards::is_set(card1, card2, card3) {
+                return vec![(triple[0]).0, (triple[1]).0];
+            }
+        }
+        unreachable!()
+    }
+
+    /// Returns indices of three cards that complete to an ultraset in the cards currently in play
+    fn get_ultraset_hint(&self) -> Vec<usize> {
+        for quadruple in self.in_play().iter().enumerate().combinations(4) {
+            let card1 = (quadruple[0]).1 .0;
+            let card2 = (quadruple[1]).1 .0;
+            let card3 = (quadruple[2]).1 .0;
+            let card4 = (quadruple[3]).1 .0;
+            if crate::cards::is_ultraset(card1, card2, card3, card4) {
+                return vec![(quadruple[0]).0, (quadruple[1]).0, (quadruple[2]).0];
+            }
+        }
+        unreachable!()
     }
 
     /// Returns a slice of active cards

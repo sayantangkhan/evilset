@@ -12,18 +12,18 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 - [x] Layout buttons in a 3 column grid
 - [x] Make state persist across runs
 - [x] Enable quitting a game
-- [ ] Show number of cards left
-- [ ] Enable hints
+- [x] Show number of cards left
+- [x] Enable hints
 - [ ] Implement a timer
 - [ ] Better window controls
 
 ### Bugfixes
-- [ ] Once `in_play` has more than 12 cards, it never reverts to 12 cards again
+- [x] Once `in_play` has more than 12 cards, it never reverts to 12 cards again
 
 ### Code cleanup
+- [x] Refactor `setengine` to get rid of the phantom generics
 - [ ] Set up lints for clippy in all 3 crates
 - [ ] Remove extraneous `pub`
-- [ ] Refactor `setengine` to get rid of the phantom generics
 
 ### Packaging
 - [ ] Set up a WASM web version

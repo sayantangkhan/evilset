@@ -57,7 +57,11 @@ pub fn selection_contains_ultraset(cards_in_play: &[(CardCoordinates, CardVisual
     false
 }
 
-fn is_set(card1: CardCoordinates, card2: CardCoordinates, card3: CardCoordinates) -> bool {
+pub(crate) fn is_set(
+    card1: CardCoordinates,
+    card2: CardCoordinates,
+    card3: CardCoordinates,
+) -> bool {
     (card1 + card2 + card3) == CardCoordinates::new(0, 0, 0, 0)
 }
 
@@ -65,7 +69,7 @@ fn complete_set(card1: CardCoordinates, card2: CardCoordinates) -> CardCoordinat
     card1 + card1 - card2
 }
 
-fn is_ultraset(
+pub(crate) fn is_ultraset(
     card1: CardCoordinates,
     card2: CardCoordinates,
     card3: CardCoordinates,

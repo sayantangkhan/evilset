@@ -38,8 +38,17 @@ pub(super) fn select_index(
     }
 }
 
-pub(super) fn get_hint(active_deck: &GameDeck) -> Vec<usize> {
-    todo!()
+pub(super) fn show_hint(game_data: &mut Option<super::ActiveGameData>) {
+    let active_deck = &game_data.as_ref().unwrap().active_deck;
+    let to_select = active_deck.get_hint();
+
+    let selected = &mut game_data.as_mut().unwrap().selected;
+    selected.clear();
+    for i in to_select {
+        selected.insert(i);
+    }
+
+    game_data.as_mut().unwrap().asked_for_hint = true;
 }
 
 pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
@@ -49,6 +58,7 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
         selected,
         game_started: _,
         prev_frame,
+        asked_for_hint,
     } = game_data;
 
     let num_selections = active_deck.selection_size();
