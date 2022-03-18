@@ -69,7 +69,9 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
             let selected_indices: Vec<usize> = selected.iter().map(|p| *p).collect();
             selected.clear();
 
-            if let Some(PlayResponse::GameOver) = active_deck.play_selection(&selected_indices) {
+            let result = active_deck.play_selection(selected_indices);
+            dbg!(&result);
+            if let PlayResponse::GameOver = result {
                 *prev_frame = Some(PlayResponse::GameOver);
                 return ();
             }

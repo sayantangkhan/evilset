@@ -1,4 +1,7 @@
-use crate::cards::{selection_contains_set, selection_contains_ultraset};
+use crate::{
+    cards::{selection_contains_set, selection_contains_ultraset},
+    selection_is_set, selection_is_ultraset,
+};
 use cardgen::{generate_random_attributes, generate_standard_attributes, CardVisualAttr};
 use rand::prelude::*;
 
@@ -12,8 +15,8 @@ pub struct Deck {
 /// A deck from which cards have been dealt out of
 #[derive(Clone)]
 pub struct ActiveDeck {
-    pub in_play: Vec<(CardCoordinates, CardVisualAttr)>,
-    pub in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
+    in_play: Vec<(CardCoordinates, CardVisualAttr)>,
+    in_deck: Vec<(CardCoordinates, CardVisualAttr)>,
 }
 
 /// Enum wrapping `ActiveDeck` marking whether Set or UltraSet is being played
@@ -24,6 +27,7 @@ pub enum GameDeck {
 }
 
 /// The three possible responses to playing a triple/quadruple.
+#[derive(Debug)]
 pub enum PlayResponse {
     InvalidPlay,
     ValidPlay,
@@ -63,11 +67,29 @@ impl GameDeck {
         GameDeck::UltraSet(ActiveDeck { in_play, in_deck })
     }
 
+    /// Returns indices of a set in the cards currently in play
+    pub fn get_set_hint(&self) -> Vec<usize> {
+        todo!()
+    }
+
+    /// Returns indices of an ultraset in the cards currently in play
+    pub fn get_ultraset_hint(&self) -> Vec<usize> {
+        todo!()
+    }
+
     /// Returns a slice of active cards
     pub fn in_play(&self) -> &[(CardCoordinates, CardVisualAttr)] {
         match self {
             GameDeck::Set(ad) => &ad.in_play,
             GameDeck::UltraSet(ad) => &ad.in_play,
+        }
+    }
+
+    /// Returns a mutable reference to the Vec of active cards
+    pub fn in_play_mut(&mut self) -> &mut Vec<(CardCoordinates, CardVisualAttr)> {
+        match self {
+            GameDeck::Set(ad) => &mut ad.in_play,
+            GameDeck::UltraSet(ad) => &mut ad.in_play,
         }
     }
 
@@ -79,65 +101,122 @@ impl GameDeck {
         }
     }
 
-    /// Plays the cards with the selected indices from the `in_play` buffer, and deals out new cards
-    pub fn play_selection(&mut self, _selection: &[usize]) -> Option<PlayResponse> {
-        todo!()
-        // TODO: Fix this code
-        // if selection.len() != T::NUM_CARDS {
-        //     None
-        // } else {
-        //     let mut selected_cards = Vec::new();
-        //     for index in selection {
-        //         selected_cards.push(*self.in_play.get(*index)?);
-        //     }
-        //     // TODO: Check removal code carefully
-        //     if T::is_generalized_set(&selected_cards) {
-        //         if self.in_deck.len() >= T::NUM_CARDS {
-        //             // Enough cards in deck to replace
-        //             if self.in_play.len() <= 12 {
-        //                 // Needs replacement
-        //                 for index in selection {
-        //                     self.in_play[*index] = self.in_deck.pop().unwrap();
-        //                 }
-        //             } else {
-        //                 for index in selection {
-        //                     self.in_play.remove(*index);
-        //                 }
-        //             }
+    /// Returns a mutable reference to the Vec of cards in deck
+    pub fn in_deck_mut(&mut self) -> &mut Vec<(CardCoordinates, CardVisualAttr)> {
+        match self {
+            GameDeck::Set(ad) => &mut ad.in_deck,
+            GameDeck::UltraSet(ad) => &mut ad.in_deck,
+        }
+    }
 
-        //             // Add more cards until in_play has generalized set
-        //             while !T::contains_generalized_set(&self.in_play) {
-        //                 if self.in_deck.is_empty() {
-        //                     return Some(PlayResponse::GameOver);
-        //                 }
-        //                 for _ in 0..T::NUM_CARDS {
-        //                     if let Some(card) = self.in_deck.pop() {
-        //                         self.in_play.push(card);
-        //                     }
-        //                 }
-        //             }
-        //             Some(PlayResponse::ValidPlay)
-        //         } else {
-        //             // Not enough cards to replace
-        //             for index in selection {
-        //                 self.in_play.remove(*index);
-        //             }
-        //             while !T::contains_generalized_set(&self.in_play) {
-        //                 if self.in_deck.is_empty() {
-        //                     return Some(PlayResponse::GameOver);
-        //                 }
-        //                 for _ in 0..T::NUM_CARDS {
-        //                     if let Some(card) = self.in_deck.pop() {
-        //                         self.in_play.push(card);
-        //                     }
-        //                 }
-        //             }
-        //             Some(PlayResponse::ValidPlay)
-        //         }
-        //     } else {
-        //         Some(PlayResponse::InvalidPlay)
-        //     }
-        // }
+    /// Plays the cards with the selected indices from the `in_play` buffer, and deals out new cards. Panics if selection is not the right length.
+    pub fn play_selection(&mut self, mut selection: Vec<usize>) -> PlayResponse {
+        selection.sort_by(|a, b| b.cmp(a));
+
+        let mut selected_cards = Vec::new();
+        for index in &selection {
+            selected_cards.push(self.in_play()[*index]);
+        }
+
+        // Case when selection is set or ultraset
+        match &self {
+            GameDeck::Set(_) => {
+                if selection_is_set(&selected_cards) {
+                    if self.in_deck().len() >= 3 {
+                        // Enough cards in deck to replace
+                        if self.in_play().len() <= 12 {
+                            for index in &selection {
+                                self.in_play_mut()[*index] = self.in_deck_mut().pop().unwrap();
+                            }
+                        } else {
+                            // The case when there are 15 or more cards
+                            for index in &selection {
+                                self.in_play_mut().remove(*index);
+                            }
+                        }
+
+                        // Add more cards until in_play has set
+                        while !selection_contains_set(&self.in_play()) {
+                            if self.in_deck().is_empty() {
+                                return PlayResponse::GameOver;
+                            }
+                            for _ in 0..3 {
+                                if let Some(card) = self.in_deck_mut().pop() {
+                                    self.in_play_mut().push(card);
+                                }
+                            }
+                        }
+
+                        return PlayResponse::ValidPlay;
+                    } else {
+                        // Not enough cards to replace
+                        for index in selection {
+                            self.in_play_mut().remove(index);
+                        }
+                        while !selection_contains_set(&self.in_play()) {
+                            if self.in_deck().is_empty() {
+                                return PlayResponse::GameOver;
+                            }
+                            for _ in 0..3 {
+                                if let Some(card) = self.in_deck_mut().pop() {
+                                    self.in_play_mut().push(card);
+                                }
+                            }
+                        }
+                        return PlayResponse::ValidPlay;
+                    }
+                }
+            }
+            GameDeck::UltraSet(_) => {
+                if selection_is_ultraset(&selected_cards) {
+                    if self.in_deck().len() >= 4 {
+                        // Enough cards in deck to replace
+                        if self.in_play().len() <= 12 {
+                            for index in &selection {
+                                self.in_play_mut()[*index] = self.in_deck_mut().pop().unwrap();
+                            }
+                        } else {
+                            // The case when there are more than 12 cards
+                            for index in &selection {
+                                self.in_play_mut().remove(*index);
+                            }
+                        }
+
+                        // Add more cards until in_play has set
+                        while !selection_contains_set(&self.in_play()) {
+                            if self.in_deck().is_empty() {
+                                return PlayResponse::GameOver;
+                            }
+                            for _ in 0..4 {
+                                if let Some(card) = self.in_deck_mut().pop() {
+                                    self.in_play_mut().push(card);
+                                }
+                            }
+                        }
+
+                        return PlayResponse::ValidPlay;
+                    } else {
+                        // Not enough cards to replace
+                        for index in selection {
+                            self.in_play_mut().remove(index);
+                        }
+                        while !selection_contains_set(&self.in_play()) {
+                            if self.in_deck().is_empty() {
+                                return PlayResponse::GameOver;
+                            }
+                            for _ in 0..4 {
+                                if let Some(card) = self.in_deck_mut().pop() {
+                                    self.in_play_mut().push(card);
+                                }
+                            }
+                        }
+                        return PlayResponse::ValidPlay;
+                    }
+                }
+            }
+        }
+
+        PlayResponse::InvalidPlay
     }
 }
 
