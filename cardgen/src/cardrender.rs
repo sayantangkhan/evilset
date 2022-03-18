@@ -3,12 +3,15 @@ use tiny_skia::Pixmap;
 
 use crate::{colorandfill::color_shape, filling_nodes::FillingNodes, CardVisualAttr};
 
+/// Width at which the card is rendered
 pub const WIDTH: u32 = 292;
+/// Height at which the card is rendered
 pub const HEIGHT: u32 = 174;
 
 // pub const WIDTH: u32 = 600;
 // pub const HEIGHT: u32 = 350;
 
+/// Renders a card to a bitmap
 pub fn render_card(card: CardVisualAttr, filling_nodes: &FillingNodes) -> Pixmap {
     let pixmap_size = ScreenSize::new(WIDTH, HEIGHT).unwrap();
 

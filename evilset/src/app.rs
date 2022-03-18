@@ -26,7 +26,7 @@ use eframe::{
     epaint::TextureHandle,
     epi,
 };
-use setengine::{ActiveDeck, CardCoordinates, Deck, PlayResponse, SetGame, UltrasetGame};
+use setengine::{CardCoordinates, Deck, GameDeck, PlayResponse};
 use std::{
     collections::{HashMap, HashSet},
     time::Duration,
@@ -103,12 +103,6 @@ enum AppState {
     EvilSet,
     UltraSet,
     EvilUltraSet,
-}
-
-#[derive(Clone)]
-enum GameDeck {
-    Set(ActiveDeck<SetGame>),
-    UltraSet(ActiveDeck<UltrasetGame>),
 }
 
 struct ActiveGameData {
@@ -436,8 +430,7 @@ impl EvilSetApp {
                 }
                 Some(card_textures) => {
                     let deck = Deck::new_standard_deck();
-                    let active_set_deck: ActiveDeck<SetGame> = ActiveDeck::start_play(&deck);
-                    let active_deck = GameDeck::Set(active_set_deck);
+                    let active_deck = GameDeck::start_set_play(&deck);
 
                     *game_data = Some(ActiveGameData {
                         active_deck,
@@ -493,10 +486,7 @@ impl EvilSetApp {
                             .font(FontId::proportional(28.0)),
                         );
 
-                        let cards_left = match &game_data.as_ref().unwrap().active_deck {
-                            GameDeck::Set(ad) => ad.in_deck.len(),
-                            GameDeck::UltraSet(ad) => ad.in_deck.len(),
-                        };
+                        let cards_left = game_data.as_ref().unwrap().active_deck.in_deck().len();
 
                         ui.label(
                             RichText::new(format!("{} cards left", cards_left))
@@ -522,37 +512,33 @@ impl EvilSetApp {
                     *ui.visuals_mut() =
                         crate::themes::generate_card_theme(&persistent_data.theme, prev_frame);
 
-                    if let GameDeck::Set(active_set_deck) = &active_deck {
-                        let available_width = ui.available_width();
-                        let available_height = ui.available_height();
+                    let available_width = ui.available_width();
+                    let available_height = ui.available_height();
 
-                        let card_textures = card_textures.as_ref().unwrap();
+                    let card_textures = card_textures.as_ref().unwrap();
 
-                        ui.columns(3, |columns| {
-                            for (index, card) in active_set_deck.in_play.iter().enumerate() {
-                                let texture = card_textures.get(card).unwrap();
+                    ui.columns(3, |columns| {
+                        for (index, card) in active_deck.in_play().iter().enumerate() {
+                            let texture = card_textures.get(card).unwrap();
 
-                                let mut button = ImageButton::new(
-                                    texture,
-                                    util::scale_card(available_width, available_height),
-                                );
+                            let mut button = ImageButton::new(
+                                texture,
+                                util::scale_card(available_width, available_height),
+                            );
 
-                                if selected.contains(&index) {
-                                    button = button.selected(true);
-                                }
+                            if selected.contains(&index) {
+                                button = button.selected(true);
+                            }
 
-                                let response = &mut columns[index % 3].add(button);
+                            let response = &mut columns[index % 3].add(button);
 
-                                if response.clicked() {
-                                    if prev_frame.is_none() {
-                                        backend::select_index(index, active_deck, selected);
-                                    }
+                            if response.clicked() {
+                                if prev_frame.is_none() {
+                                    backend::select_index(index, active_deck, selected);
                                 }
                             }
-                        });
-                    } else {
-                        unreachable!()
-                    }
+                        }
+                    });
                 })
             });
         }

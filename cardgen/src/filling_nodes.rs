@@ -1,10 +1,12 @@
 use crate::Filling;
 use usvg::Node;
 
+/// Array containing the SVG trees of the six filling patterns
 pub struct FillingNodes {
     array: [Option<Node>; 6],
 }
 
+/// Generates the FillingNodes from `include!`ed svg data
 pub fn generate_filling_nodes() -> Option<FillingNodes> {
     let mut array_vec = Vec::new();
     let opt = usvg::Options::default();

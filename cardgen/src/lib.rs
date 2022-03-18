@@ -1,3 +1,5 @@
+//! The module renders Set cards with various attributes to bitmaps
+
 #![forbid(unsafe_code)]
 #![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(rust_2018_idioms)]
@@ -14,14 +16,20 @@ pub use cardrender::WIDTH as CARDWIDTH;
 pub use filling_nodes::{generate_filling_nodes, FillingNodes};
 pub use randomize_attribute::{generate_random_attributes, generate_standard_attributes};
 
+/// The four visual attributes a card can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CardVisualAttr {
+    /// Number of elements on card
     pub num: SetNum,
+    /// Color of the elements on card
     pub color: SetColor,
+    /// Shape of element on card
     pub shape: Shape,
+    /// The filling pattern of the element on card
     pub filling: Filling,
 }
 
+/// The six filling patterns we can render. The first three are standard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Filling {
     Hollow,
@@ -32,6 +40,7 @@ pub enum Filling {
     VerticalStriped,
 }
 
+/// The six colors we can render shapes in. The first three are standard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SetColor {
     Purple,
@@ -42,6 +51,7 @@ pub enum SetColor {
     Blue,
 }
 
+/// The number of elements we can render on a card.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SetNum {
     One,
@@ -52,6 +62,7 @@ pub enum SetNum {
     Six,
 }
 
+/// The six different shapes we can render. The first three are standard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Shape {
     Diamond,
@@ -62,6 +73,7 @@ pub enum Shape {
     Club,
 }
 
+/// The attributes we can vary in any given deck
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Attributes {
     pub numbers: [SetNum; 3],

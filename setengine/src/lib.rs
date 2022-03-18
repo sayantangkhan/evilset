@@ -6,8 +6,11 @@
 mod cards;
 mod deck;
 
-pub use cards::{is_set, is_ultraset, CardCoordinates, GeneralizedSetGame, SetGame, UltrasetGame};
-pub use deck::{ActiveDeck, Deck, PlayResponse};
+pub use cards::{
+    selection_contains_set, selection_contains_ultraset, selection_is_set, selection_is_ultraset,
+    CardCoordinates,
+};
+pub use deck::{Deck, GameDeck, PlayResponse};
 
 #[cfg(test)]
 extern crate quickcheck;

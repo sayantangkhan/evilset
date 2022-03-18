@@ -3,7 +3,7 @@ use std::thread::sleep;
 
 use super::GameDeck;
 use cardgen::CardVisualAttr;
-use setengine::{CardCoordinates, GeneralizedSetGame, PlayResponse, SetGame, UltrasetGame};
+use setengine::{selection_is_set, selection_is_ultraset, CardCoordinates, PlayResponse};
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -22,18 +22,11 @@ pub(super) fn select_index(
     active_deck: &GameDeck,
     selected_cards: &mut HashSet<usize>,
 ) {
-    let in_play = match &active_deck {
-        GameDeck::Set(ad) => &ad.in_play,
-        GameDeck::UltraSet(ad) => &ad.in_play,
-    };
-
-    let max_selected_size = match &active_deck {
-        GameDeck::Set(_) => 3,
-        GameDeck::UltraSet(_) => 4,
-    };
+    let in_play = active_deck.in_play();
+    let selection_size = active_deck.selection_size();
 
     if selected_index < in_play.len() {
-        if selected_cards.len() == max_selected_size && !selected_cards.contains(&selected_index) {
+        if selected_cards.len() == selection_size && !selected_cards.contains(&selected_index) {
             return ();
         }
 
@@ -46,9 +39,7 @@ pub(super) fn select_index(
 }
 
 pub(super) fn get_hint(active_deck: &GameDeck) -> Vec<usize> {
-    let mut generalized_set_indices = Vec::new();
-
-    generalized_set_indices
+    todo!()
 }
 
 pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
@@ -60,10 +51,7 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
         prev_frame,
     } = game_data;
 
-    let num_selections = match active_deck {
-        GameDeck::Set(_) => 3,
-        GameDeck::UltraSet(_) => 4,
-    };
+    let num_selections = active_deck.selection_size();
 
     if selected.len() != num_selections {
         return ();
@@ -81,48 +69,30 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
             let selected_indices: Vec<usize> = selected.iter().map(|p| *p).collect();
             selected.clear();
 
-            match active_deck {
-                GameDeck::Set(ad) => {
-                    if let Some(PlayResponse::GameOver) = ad.play_selection(&selected_indices) {
-                        *prev_frame = Some(PlayResponse::GameOver);
-                        return ();
-                    }
-                }
-                GameDeck::UltraSet(ad) => {
-                    if let Some(PlayResponse::GameOver) = ad.play_selection(&selected_indices) {
-                        *prev_frame = Some(PlayResponse::GameOver);
-                        return ();
-                    }
-                }
+            if let Some(PlayResponse::GameOver) = active_deck.play_selection(&selected_indices) {
+                *prev_frame = Some(PlayResponse::GameOver);
+                return ();
             }
-
             *prev_frame = None;
         }
         Some(PlayResponse::InvalidPlay) => {
             selected.clear();
             *prev_frame = None;
         }
-        None => match active_deck {
-            GameDeck::Set(ad) => {
-                let selected_cards: Vec<(CardCoordinates, CardVisualAttr)> =
-                    selected.iter().map(|p| ad.in_play[*p]).collect();
+        None => {
+            let selected_cards: Vec<(CardCoordinates, CardVisualAttr)> =
+                selected.iter().map(|p| active_deck.in_play()[*p]).collect();
 
-                if SetGame::is_generalized_set(&selected_cards) {
-                    *prev_frame = Some(PlayResponse::ValidPlay);
-                } else {
-                    *prev_frame = Some(PlayResponse::InvalidPlay);
-                }
-            }
-            GameDeck::UltraSet(ad) => {
-                let selected_cards: Vec<(CardCoordinates, CardVisualAttr)> =
-                    selected.iter().map(|p| ad.in_play[*p]).collect();
+            let result = match active_deck {
+                GameDeck::Set(_) => selection_is_set(&selected_cards),
+                GameDeck::UltraSet(_) => selection_is_ultraset(&selected_cards),
+            };
 
-                if UltrasetGame::is_generalized_set(&selected_cards) {
-                    *prev_frame = Some(PlayResponse::ValidPlay);
-                } else {
-                    *prev_frame = Some(PlayResponse::InvalidPlay);
-                }
+            if result {
+                *prev_frame = Some(PlayResponse::ValidPlay);
+            } else {
+                *prev_frame = Some(PlayResponse::InvalidPlay);
             }
-        },
+        }
     }
 }

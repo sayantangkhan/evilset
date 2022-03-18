@@ -4,12 +4,12 @@ use setengine::*;
 fn detect_set(n: usize) {
     let deck = Deck::new_standard_deck();
     let cards = &deck.cards[0..n];
-    SetGame::contains_generalized_set(cards);
+    selection_contains_set(cards);
 }
 fn detect_ultraset(n: usize) {
     let deck = Deck::new_standard_deck();
     let cards = &deck.cards[0..n];
-    UltrasetGame::contains_generalized_set(cards);
+    selection_contains_ultraset(cards);
 }
 
 fn generalized_set_detection_benchmark(c: &mut Criterion) {
