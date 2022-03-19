@@ -9,6 +9,7 @@ use rand::prelude::*;
 use crate::CardCoordinates;
 
 /// A shuffled deck
+#[derive(Clone)]
 pub struct Deck {
     pub cards: Vec<(CardCoordinates, CardVisualAttr)>,
 }

@@ -14,7 +14,7 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 - [x] Enable quitting a game
 - [x] Show number of cards left
 - [x] Enable hints
-- [ ] Implement a timer
+- [x] Implement a timer
 - [ ] Better window controls
 
 ### Bugfixes

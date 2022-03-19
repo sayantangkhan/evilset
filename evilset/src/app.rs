@@ -209,6 +209,7 @@ impl epi::App for EvilSetApp {
         match *app_state {
             AppState::Menu => self.update_menu(ctx, frame),
             AppState::Set => self.play_set(ctx, frame),
+            AppState::EvilSet => self.play_evilset(ctx, frame),
             // &mut GameState::ShowDeck => self.show_deck(ctx, frame),
             _ => todo!(),
         }
@@ -592,6 +593,230 @@ impl EvilSetApp {
             });
         }
     }
+
+    fn play_evilset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        let Self {
+            persistent_data,
+            app_state,
+            previous_state,
+            game_data,
+            background_rendering,
+        } = self;
+
+        if game_data.is_none() {
+            let deck = Deck::new_random_deck();
+            let active_deck = GameDeck::start_set_play(&deck);
+
+            // For debugging purposes
+            // let mut active_deck = GameDeck::start_set_play(&deck);
+            // active_deck.in_deck_mut().clear();
+
+            *game_data = Some(ActiveGameData {
+                active_deck,
+                card_textures: None,
+                selected: HashSet::new(),
+                game_started: None,
+                game_ended: None,
+                prev_frame: None,
+                asked_for_hint: false,
+                updated_times: false,
+            });
+
+            let rendering_promise = render::deck_texture_promise(deck, ctx);
+            background_rendering.randomized_deck = Some(rendering_promise);
+        } else {
+            match &background_rendering.randomized_deck {
+                Some(rendering_promise) => {
+                    match rendering_promise.ready() {
+                        None => {
+                            egui::CentralPanel::default().show(ctx, |ui| {
+                                ui.vertical_centered_justified(|ui| {
+                                    ui.label(
+                                        RichText::new("Rendering cards")
+                                            .font(FontId::proportional(18.0)),
+                                    );
+                                    ui.add(egui::Spinner::new()); // still loading
+                                });
+                            });
+                        }
+                        Some(card_textures) => {
+                            game_data.as_mut().unwrap().card_textures = Some(card_textures.clone());
+                            game_data.as_mut().unwrap().game_started = Some(Instant::now());
+                            background_rendering.randomized_deck = None;
+                        }
+                    }
+                }
+                None => {
+                    // Checking if 3 cards have been selected, and if so, evaluating them for correctness
+                    backend::evaluate_selection(game_data.as_mut().unwrap());
+
+                    let game_still_running = match game_data.as_ref().unwrap().prev_frame {
+                        Some(PlayResponse::GameOver) => false,
+                        _ => true,
+                    };
+
+                    let best_times_updated = game_data.as_ref().unwrap().updated_times;
+                    if !game_still_running
+                        && !best_times_updated
+                        && !game_data.as_ref().unwrap().asked_for_hint
+                    {
+                        let times = &mut persistent_data.times.evilset_times;
+                        let elapsed_time =
+                            game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                - game_data.as_ref().unwrap().game_ended.unwrap().elapsed();
+                        times.push(elapsed_time);
+                        times.sort();
+                        let end_index = std::cmp::min(TIMES_TO_DISPLAY, times.len());
+                        *times = times[0..end_index].to_vec();
+                        game_data.as_mut().unwrap().updated_times = true;
+                    }
+
+                    // Handling the keyboard events if nothing happened previous frame
+                    if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
+                        keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                    }
+
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        // The central panel the region left after adding TopPanel's and SidePanel's
+
+                        ui.horizontal(|ui| {
+                            ui.with_layout(Layout::left_to_right(), |ui| {
+                                let close_button =
+                                    ui.add(Button::new(RichText::new("❌").size(25.0)));
+                                if close_button.clicked() {
+                                    *app_state = AppState::Menu;
+                                    *previous_state = Some(AppState::Set);
+                                }
+
+                                let hint_button =
+                                    ui.add(Button::new(RichText::new("❓").size(25.0)));
+                                if hint_button.clicked() && game_still_running {
+                                    backend::show_hint(game_data);
+                                }
+                            });
+
+                            ui.vertical_centered(|ui| {
+                                ui.heading(
+                                    RichText::new("Set").font(FontId::proportional(28.0)).color(
+                                        crate::themes::thematic_blue(&persistent_data.theme),
+                                    ),
+                                );
+                            });
+
+                            ui.with_layout(Layout::right_to_left(), |ui| {
+                                ui.label(
+                                    RichText::new(format!(
+                                        "⏱ {}",
+                                        util::standard_format(if game_still_running {
+                                            game_data
+                                                .as_ref()
+                                                .unwrap()
+                                                .game_started
+                                                .unwrap()
+                                                .elapsed()
+                                        } else {
+                                            game_data
+                                                .as_ref()
+                                                .unwrap()
+                                                .game_started
+                                                .unwrap()
+                                                .elapsed()
+                                                - game_data
+                                                    .as_ref()
+                                                    .unwrap()
+                                                    .game_ended
+                                                    .unwrap()
+                                                    .elapsed()
+                                        })
+                                    ))
+                                    .font(FontId::proportional(28.0)),
+                                );
+
+                                let cards_left =
+                                    game_data.as_ref().unwrap().active_deck.in_deck().len();
+
+                                ui.label(
+                                    RichText::new(format!("{} cards left", cards_left))
+                                        .font(FontId::proportional(23.0)),
+                                );
+                                ctx.request_repaint();
+                            });
+                        });
+
+                        ui.add_space(10.0);
+                        ui.separator();
+                        ui.add_space(20.0);
+
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            let ActiveGameData {
+                                active_deck,
+                                card_textures,
+                                selected,
+                                game_started,
+                                game_ended,
+                                prev_frame,
+                                asked_for_hint,
+                                updated_times,
+                            } = game_data.as_mut().unwrap();
+
+                            *ui.visuals_mut() = crate::themes::generate_card_theme(
+                                &persistent_data.theme,
+                                prev_frame,
+                            );
+
+                            let available_width = ui.available_width();
+                            let available_height = ui.available_height();
+
+                            let card_textures = card_textures.as_ref().unwrap();
+
+                            ui.columns(3, |columns| {
+                                for (index, card) in active_deck.in_play().iter().enumerate() {
+                                    let texture = card_textures.get(card).unwrap();
+
+                                    let mut button = ImageButton::new(
+                                        texture,
+                                        util::scale_card(available_width, available_height),
+                                    );
+
+                                    if selected.contains(&index) {
+                                        button = button.selected(true);
+                                    }
+
+                                    let response = &mut columns[index % 3].add(button);
+
+                                    if response.clicked() {
+                                        if prev_frame.is_none() {
+                                            backend::select_index(index, active_deck, selected);
+                                        }
+                                    }
+                                }
+                            });
+
+                            if !game_still_running {
+                                ui.vertical_centered(|ui| {
+                                    ui.label(
+                                        RichText::new("Game over").font(FontId::proportional(23.0)),
+                                    );
+
+                                    let close_button = ui.add(Button::new(
+                                        RichText::new("Return to main menu").size(23.0),
+                                    ));
+                                    if close_button.clicked() {
+                                        *app_state = AppState::Menu;
+                                        *previous_state = Some(AppState::Set);
+                                    }
+                                });
+                            }
+                        })
+                    });
+                }
+            }
+        }
+    }
+
+    fn play_ultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {}
+
+    fn play_evilultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {}
 }
 
 fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData) {
@@ -644,17 +869,22 @@ fn generate_deck_textures(
 mod background_render {
     use super::{generate_deck_textures, TextureMap};
     pub use poll_promise::Promise;
+    use setengine::Deck;
 
     pub(super) fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
         let deck = setengine::Deck::new_standard_deck();
 
+        deck_texture_promise(deck.clone(), ctx)
+    }
+
+    pub(super) fn deck_texture_promise(deck: Deck, ctx: &egui::Context) -> Promise<TextureMap> {
         let cloned_context = ctx.clone();
 
         let rendering_func = move || {
             let filling_nodes = cardgen::generate_filling_nodes();
             generate_deck_textures(&deck, &filling_nodes, &cloned_context)
         };
-        Promise::spawn_thread("Background standard deck rendering", rendering_func)
+        Promise::spawn_thread("Background deck rendering", rendering_func)
     }
 }
 
@@ -662,17 +892,24 @@ mod background_render {
 #[cfg(target_arch = "wasm32")]
 mod foreground_render {
     use super::{generate_deck_textures, TextureMap};
+    use setengine::Deck;
 
     pub(super) struct Promise<T> {
+        deck: Deck,
         context: egui::Context,
-        closure: fn(egui::Context) -> T,
+        closure: fn(Deck, egui::Context) -> T,
         polled_once: bool,
         result: Option<T>,
     }
 
     impl<T> Promise<T> {
-        fn create(context: &egui::Context, closure: fn(egui::Context) -> T) -> Promise<T> {
+        fn create(
+            deck: &Deck,
+            context: &egui::Context,
+            closure: fn(Deck, egui::Context) -> T,
+        ) -> Promise<T> {
             Promise {
+                deck: deck.clone(),
                 context: context.clone(),
                 closure,
                 polled_once: false,
@@ -684,7 +921,7 @@ mod foreground_render {
             if self.polled_once {
                 if self.result.is_none() {
                     let function = self.closure;
-                    self.result = Some(function(self.context.clone()));
+                    self.result = Some(function(self.deck.clone(), self.context.clone()));
                 }
 
                 &self.result
@@ -696,12 +933,17 @@ mod foreground_render {
     }
 
     pub(super) fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
-        let rendering_func = |context| {
-            let deck = setengine::Deck::new_standard_deck();
+        let deck = setengine::Deck::new_standard_deck();
+
+        deck_texture_promise(deck, ctx)
+    }
+
+    pub(super) fn deck_texture_promise(deck: Deck, ctx: &egui::Context) -> Promise<TextureMap> {
+        let rendering_func = |deck, context| {
             let filling_nodes = cardgen::generate_filling_nodes();
             generate_deck_textures(&deck, &filling_nodes, &context)
         };
 
-        Promise::create(ctx, rendering_func)
+        Promise::create(&deck, ctx, rendering_func)
     }
 }
