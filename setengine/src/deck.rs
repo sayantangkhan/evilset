@@ -39,9 +39,9 @@ pub enum PlayResponse {
 impl GameDeck {
     /// Returns how many cards need to be selected, depending upon the game
     pub fn selection_size(&self) -> usize {
-        match self {
-            &GameDeck::Set(_) => 3,
-            &GameDeck::UltraSet(_) => 4,
+        match *self {
+            GameDeck::Set(_) => 3,
+            GameDeck::UltraSet(_) => 4,
         }
     }
 
@@ -71,9 +71,9 @@ impl GameDeck {
 
     /// Returns indices of 2/3 cards that form set/ultraset after completing with one more card
     pub fn get_hint(&self) -> Vec<usize> {
-        match self {
-            &Self::Set(_) => self.get_set_hint(),
-            &Self::UltraSet(_) => self.get_ultraset_hint(),
+        match *self {
+            Self::Set(_) => self.get_set_hint(),
+            Self::UltraSet(_) => self.get_ultraset_hint(),
         }
     }
 
@@ -163,7 +163,7 @@ impl GameDeck {
                         }
 
                         // Add more cards until in_play has set
-                        while !selection_contains_set(&self.in_play()) {
+                        while !selection_contains_set(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }
@@ -180,7 +180,7 @@ impl GameDeck {
                         for index in selection {
                             self.in_play_mut().remove(index);
                         }
-                        while !selection_contains_set(&self.in_play()) {
+                        while !selection_contains_set(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }
@@ -210,7 +210,7 @@ impl GameDeck {
                         }
 
                         // Add more cards until in_play has set
-                        while !selection_contains_set(&self.in_play()) {
+                        while !selection_contains_set(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }
@@ -227,7 +227,7 @@ impl GameDeck {
                         for index in selection {
                             self.in_play_mut().remove(index);
                         }
-                        while !selection_contains_set(&self.in_play()) {
+                        while !selection_contains_set(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }

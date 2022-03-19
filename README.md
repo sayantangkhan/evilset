@@ -22,7 +22,7 @@ A variant of Set (and Ultraset) that randomizes attributes across games.
 
 ### Code cleanup
 - [x] Refactor `setengine` to get rid of the phantom generics
-- [ ] Set up lints for clippy in all 3 crates
+- [x] Set up lints for clippy in all 3 crates
 - [ ] Remove extraneous `pub`
 
 ### Packaging

@@ -27,7 +27,7 @@ pub(super) fn select_index(
 
     if selected_index < in_play.len() {
         if selected_cards.len() == selection_size && !selected_cards.contains(&selected_index) {
-            return ();
+            return;
         }
 
         if selected_cards.contains(&selected_index) {
@@ -66,7 +66,7 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
     let num_selections = active_deck.selection_size();
 
     if selected.len() != num_selections {
-        return ();
+        return;
     }
 
     if prev_frame.is_some() {
@@ -76,14 +76,14 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
     match prev_frame {
         Some(PlayResponse::GameOver) => {}
         Some(PlayResponse::ValidPlay) => {
-            let selected_indices: Vec<usize> = selected.iter().map(|p| *p).collect();
+            let selected_indices: Vec<usize> = selected.iter().copied().collect();
             selected.clear();
 
             let result = active_deck.play_selection(selected_indices);
             if let PlayResponse::GameOver = result {
                 *prev_frame = Some(PlayResponse::GameOver);
                 *game_ended = Some(super::Instant::now());
-                return ();
+                return;
             }
             *prev_frame = None;
         }

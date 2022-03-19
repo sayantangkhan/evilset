@@ -260,7 +260,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -278,7 +278,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -296,7 +296,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -314,7 +314,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
                 });
@@ -445,7 +445,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -463,7 +463,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -481,7 +481,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
 
@@ -499,7 +499,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(util::standard_format(time.clone()));
+                            ui.monospace(util::standard_format(*time));
                         }
                     });
                 });
@@ -606,10 +606,10 @@ impl EvilSetApp {
             // Checking if 3 cards have been selected, and if so, evaluating them for correctness
             backend::evaluate_selection(game_data.as_mut().unwrap());
 
-            let game_still_running = match game_data.as_ref().unwrap().prev_frame {
-                Some(PlayResponse::GameOver) => false,
-                _ => true,
-            };
+            let game_still_running = !matches!(
+                game_data.as_ref().unwrap().prev_frame,
+                Some(PlayResponse::GameOver)
+            );
 
             let best_times_updated = game_data.as_ref().unwrap().updated_times;
             if !game_still_running
@@ -628,7 +628,7 @@ impl EvilSetApp {
 
             // Handling the keyboard events if nothing happened previous frame
             if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
-                keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                keyboard_card_select(ctx, game_data.as_mut().unwrap());
             }
 
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -719,10 +719,8 @@ impl EvilSetApp {
 
                             let response = &mut columns[index % 3].add(button);
 
-                            if response.clicked() {
-                                if prev_frame.is_none() {
-                                    backend::select_index(index, active_deck, selected);
-                                }
+                            if response.clicked() && prev_frame.is_none() {
+                                backend::select_index(index, active_deck, selected);
                             }
                         }
                     });
@@ -800,10 +798,10 @@ impl EvilSetApp {
                     // Checking if 3 cards have been selected, and if so, evaluating them for correctness
                     backend::evaluate_selection(game_data.as_mut().unwrap());
 
-                    let game_still_running = match game_data.as_ref().unwrap().prev_frame {
-                        Some(PlayResponse::GameOver) => false,
-                        _ => true,
-                    };
+                    let game_still_running = !matches!(
+                        game_data.as_ref().unwrap().prev_frame,
+                        Some(PlayResponse::GameOver)
+                    );
 
                     let best_times_updated = game_data.as_ref().unwrap().updated_times;
                     if !game_still_running
@@ -823,7 +821,7 @@ impl EvilSetApp {
 
                     // Handling the keyboard events if nothing happened previous frame
                     if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
-                        keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                        keyboard_card_select(ctx, game_data.as_mut().unwrap());
                     }
 
                     egui::CentralPanel::default().show(ctx, |ui| {
@@ -934,10 +932,8 @@ impl EvilSetApp {
 
                                     let response = &mut columns[index % 3].add(button);
 
-                                    if response.clicked() {
-                                        if prev_frame.is_none() {
-                                            backend::select_index(index, active_deck, selected);
-                                        }
+                                    if response.clicked() && prev_frame.is_none() {
+                                        backend::select_index(index, active_deck, selected);
                                     }
                                 }
                             });
@@ -1010,10 +1006,10 @@ impl EvilSetApp {
             // Checking if 4 cards have been selected, and if so, evaluating them for correctness
             backend::evaluate_selection(game_data.as_mut().unwrap());
 
-            let game_still_running = match game_data.as_ref().unwrap().prev_frame {
-                Some(PlayResponse::GameOver) => false,
-                _ => true,
-            };
+            let game_still_running = !matches!(
+                game_data.as_ref().unwrap().prev_frame,
+                Some(PlayResponse::GameOver)
+            );
 
             let best_times_updated = game_data.as_ref().unwrap().updated_times;
             if !game_still_running
@@ -1032,7 +1028,7 @@ impl EvilSetApp {
 
             // Handling the keyboard events if nothing happened previous frame
             if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
-                keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                keyboard_card_select(ctx, game_data.as_mut().unwrap());
             }
 
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -1123,10 +1119,8 @@ impl EvilSetApp {
 
                             let response = &mut columns[index % 3].add(button);
 
-                            if response.clicked() {
-                                if prev_frame.is_none() {
-                                    backend::select_index(index, active_deck, selected);
-                                }
+                            if response.clicked() && prev_frame.is_none() {
+                                backend::select_index(index, active_deck, selected);
                             }
                         }
                     });
@@ -1204,10 +1198,10 @@ impl EvilSetApp {
                     // Checking if 3 cards have been selected, and if so, evaluating them for correctness
                     backend::evaluate_selection(game_data.as_mut().unwrap());
 
-                    let game_still_running = match game_data.as_ref().unwrap().prev_frame {
-                        Some(PlayResponse::GameOver) => false,
-                        _ => true,
-                    };
+                    let game_still_running = !matches!(
+                        game_data.as_ref().unwrap().prev_frame,
+                        Some(PlayResponse::GameOver)
+                    );
 
                     let best_times_updated = game_data.as_ref().unwrap().updated_times;
                     if !game_still_running
@@ -1227,7 +1221,7 @@ impl EvilSetApp {
 
                     // Handling the keyboard events if nothing happened previous frame
                     if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
-                        keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                        keyboard_card_select(ctx, game_data.as_mut().unwrap());
                     }
 
                     egui::CentralPanel::default().show(ctx, |ui| {
@@ -1338,10 +1332,8 @@ impl EvilSetApp {
 
                                     let response = &mut columns[index % 3].add(button);
 
-                                    if response.clicked() {
-                                        if prev_frame.is_none() {
-                                            backend::select_index(index, active_deck, selected);
-                                        }
+                                    if response.clicked() && prev_frame.is_none() {
+                                        backend::select_index(index, active_deck, selected);
                                     }
                                 }
                             });
@@ -1424,7 +1416,7 @@ mod background_render {
     pub(super) fn standard_deck_texture_promise(ctx: &egui::Context) -> Promise<TextureMap> {
         let deck = setengine::Deck::new_standard_deck();
 
-        deck_texture_promise(deck.clone(), ctx)
+        deck_texture_promise(deck, ctx)
     }
 
     pub(super) fn deck_texture_promise(deck: Deck, ctx: &egui::Context) -> Promise<TextureMap> {
