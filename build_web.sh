@@ -4,8 +4,8 @@ script_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$script_path"
 
 OPEN=false
-FAST=true
-BUILD=debug
+FAST=false
+BUILD=release
 
 while test $# -gt 0; do
   case "$1" in
