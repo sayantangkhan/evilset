@@ -2,33 +2,9 @@
 
 A variant of Set (and Ultraset) that randomizes attributes across games.
 
-## Things to do
+## Download or play
 
-### Core functionality
-- [x] Implement dark and light mode and ensure it works with card colors
-- [x] Async rendering (using thread for non-wasm)
-- [x] Tweak patterns and colors to work well with the color scheme (add brown and blue, and get rid of wavy pattern)
-- [x] Async rendering (other methods for wasm)
-- [x] Layout buttons in a 3 column grid
-- [x] Make state persist across runs
-- [x] Enable quitting a game
-- [x] Show number of cards left
-- [x] Enable hints
-- [x] Implement a timer
-- [ ] Better window controls
-
-### Bugfixes
-- [x] Once `in_play` has more than 12 cards, it never reverts to 12 cards again
-
-### Code cleanup
-- [x] Refactor `setengine` to get rid of the phantom generics
-- [x] Set up lints for clippy in all 3 crates
-- [ ] Remove extraneous `pub`
-
-### Packaging
-- [ ] Set up a WASM web version
-- [ ] Package for Flathub
-- [ ] Package for MacOS
+Go the the [application web page](https://sayantangkhan.github.io/evilset/) to download native versions or play online.
 
 ## Building locally on Linux
 
@@ -47,3 +23,7 @@ If you also want to run `rust-analyzer` in the same container, you will need to 
 It might also help to install `mold` and use it as a linker to improve iteration speed.
 
 `dnf install clang mold`
+
+## Building locally on macOS
+
+You need to install `rustup`, and possibly XCode. Once that's done, building is just a matter of running `cargo build --release`. Note that this just creates an executable, but not an `.app` bundle.
