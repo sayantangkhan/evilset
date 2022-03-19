@@ -57,8 +57,10 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
         card_textures: _,
         selected,
         game_started: _,
+        game_ended,
         prev_frame,
-        asked_for_hint,
+        asked_for_hint: _,
+        updated_times: _,
     } = game_data;
 
     let num_selections = active_deck.selection_size();
@@ -72,17 +74,15 @@ pub(super) fn evaluate_selection(game_data: &mut super::ActiveGameData) {
     }
 
     match prev_frame {
-        Some(PlayResponse::GameOver) => {
-            println!("Game over");
-        }
+        Some(PlayResponse::GameOver) => {}
         Some(PlayResponse::ValidPlay) => {
             let selected_indices: Vec<usize> = selected.iter().map(|p| *p).collect();
             selected.clear();
 
             let result = active_deck.play_selection(selected_indices);
-            dbg!(&result);
             if let PlayResponse::GameOver = result {
                 *prev_frame = Some(PlayResponse::GameOver);
+                *game_ended = Some(super::Instant::now());
                 return ();
             }
             *prev_frame = None;

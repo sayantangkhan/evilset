@@ -110,8 +110,10 @@ struct ActiveGameData {
     card_textures: Option<TextureMap>,
     selected: HashSet<usize>,
     game_started: Option<Instant>,
+    game_ended: Option<Instant>,
     prev_frame: Option<PlayResponse>,
     asked_for_hint: bool,
+    updated_times: bool,
 }
 
 pub(crate) type TextureMap = HashMap<(CardCoordinates, CardVisualAttr), TextureHandle>;
@@ -164,11 +166,11 @@ impl epi::App for EvilSetApp {
         &mut self,
         ctx: &egui::Context,
         _frame: &epi::Frame,
-        _storage: Option<&dyn epi::Storage>,
+        storage: Option<&dyn epi::Storage>,
     ) {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = _storage {
+        if let Some(storage) = storage {
             *self = epi::get_value(storage, APP_KEY).unwrap_or_default()
         }
 
@@ -255,7 +257,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(time.as_secs().to_string());
+                            ui.monospace(util::standard_format(time.clone()));
                         }
                     });
 
@@ -273,7 +275,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(time.as_secs().to_string());
+                            ui.monospace(util::standard_format(time.clone()));
                         }
                     });
 
@@ -291,7 +293,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(time.as_secs().to_string());
+                            ui.monospace(util::standard_format(time.clone()));
                         }
                     });
 
@@ -309,7 +311,7 @@ impl EvilSetApp {
                             .iter()
                             .take(TIMES_TO_DISPLAY)
                         {
-                            ui.monospace(time.as_secs().to_string());
+                            ui.monospace(util::standard_format(time.clone()));
                         }
                     });
                 });
@@ -431,18 +433,21 @@ impl EvilSetApp {
                 }
                 Some(card_textures) => {
                     let deck = Deck::new_standard_deck();
-                    let mut active_deck = GameDeck::start_set_play(&deck);
+                    let active_deck = GameDeck::start_set_play(&deck);
 
                     // For debugging purposes
-                    active_deck.in_deck_mut().clear();
+                    // let mut active_deck = GameDeck::start_set_play(&deck);
+                    // active_deck.in_deck_mut().clear();
 
                     *game_data = Some(ActiveGameData {
                         active_deck,
                         card_textures: Some(card_textures.clone()),
                         selected: HashSet::new(),
                         game_started: Some(Instant::now()),
+                        game_ended: None,
                         prev_frame: None,
                         asked_for_hint: false,
+                        updated_times: false,
                     });
                 }
             }
@@ -450,8 +455,28 @@ impl EvilSetApp {
             // Checking if 3 cards have been selected, and if so, evaluating them for correctness
             backend::evaluate_selection(game_data.as_mut().unwrap());
 
+            let game_still_running = match game_data.as_ref().unwrap().prev_frame {
+                Some(PlayResponse::GameOver) => false,
+                _ => true,
+            };
+
+            let best_times_updated = game_data.as_ref().unwrap().updated_times;
+            if !game_still_running
+                && !best_times_updated
+                && !game_data.as_ref().unwrap().asked_for_hint
+            {
+                let times = &mut persistent_data.times.set_times;
+                let elapsed_time = game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                    - game_data.as_ref().unwrap().game_ended.unwrap().elapsed();
+                times.push(elapsed_time);
+                times.sort();
+                let end_index = std::cmp::min(TIMES_TO_DISPLAY, times.len());
+                *times = times[0..end_index].to_vec();
+                game_data.as_mut().unwrap().updated_times = true;
+            }
+
             // Handling the keyboard events if nothing happened previous frame
-            if game_data.as_ref().unwrap().prev_frame.is_none() {
+            if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
                 keyboard_card_select(&ctx, game_data.as_mut().unwrap());
             }
 
@@ -467,9 +492,8 @@ impl EvilSetApp {
                         }
 
                         let hint_button = ui.add(Button::new(RichText::new("❓").size(25.0)));
-                        if hint_button.clicked() {
+                        if hint_button.clicked() && game_still_running {
                             backend::show_hint(game_data);
-                            println!("Asked for hint");
                         }
                     });
 
@@ -485,9 +509,12 @@ impl EvilSetApp {
                         ui.label(
                             RichText::new(format!(
                                 "⏱ {}",
-                                util::standard_format(
+                                util::standard_format(if game_still_running {
                                     game_data.as_ref().unwrap().game_started.unwrap().elapsed()
-                                )
+                                } else {
+                                    game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                        - game_data.as_ref().unwrap().game_ended.unwrap().elapsed()
+                                })
                             ))
                             .font(FontId::proportional(28.0)),
                         );
@@ -512,8 +539,10 @@ impl EvilSetApp {
                         card_textures,
                         selected,
                         game_started,
+                        game_ended,
                         prev_frame,
                         asked_for_hint,
+                        updated_times,
                     } = game_data.as_mut().unwrap();
 
                     *ui.visuals_mut() =
@@ -546,6 +575,19 @@ impl EvilSetApp {
                             }
                         }
                     });
+
+                    if !game_still_running {
+                        ui.vertical_centered(|ui| {
+                            ui.label(RichText::new("Game over").font(FontId::proportional(23.0)));
+
+                            let close_button = ui
+                                .add(Button::new(RichText::new("Return to main menu").size(23.0)));
+                            if close_button.clicked() {
+                                *app_state = AppState::Menu;
+                                *previous_state = Some(AppState::Set);
+                            }
+                        });
+                    }
                 })
             });
         }
