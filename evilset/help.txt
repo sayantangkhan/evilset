@@ -1,0 +1,12 @@
+About: 
+Evil Set is a variant of Set that randomizes the attributes that appear on the card at the start of each game, which removes the advantage muscle memory provides in a game of set. The game has 4 modes of play: regular Set and Ultra Set, and their Evil variants, which randomize the card attributes. The best 15 times for each variant are recorded, and show up on the right panel. However, using a hint during a game renders that game's time ineligible for consideration.
+
+Controls:
+The cards on screen are laid out in rows of three, with a maximum of seven rows. The cards can be selected using a touch screen, a mouse/trackpad, or a keybaord. The keyboard shortcuts corresponding to each row and column are the following.
+1  2  3
+Q  W  E
+A  S  D
+Z  X  C
+4  5  6
+R  T  Y
+F  G  H

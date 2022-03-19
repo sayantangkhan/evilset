@@ -8,6 +8,7 @@ mod utility_functions;
 #[cfg(not(target_arch = "wasm32"))]
 use background_render as render;
 
+use egui::Frame;
 #[cfg(target_arch = "wasm32")]
 use foreground_render as render;
 
@@ -35,7 +36,7 @@ use utility_functions as util;
 
 const TIMES_TO_DISPLAY: usize = 15;
 const APP_KEY: &str = "evilset_app";
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+// const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 lazy_static! {
     static ref KEYBINDINGS: HashMap<Key, usize> = [
@@ -199,9 +200,9 @@ impl epi::App for EvilSetApp {
         let Self {
             persistent_data,
             app_state,
-            previous_state,
-            game_data,
-            background_rendering,
+            previous_state: _,
+            game_data: _,
+            background_rendering: _,
         } = self;
 
         ctx.set_visuals(crate::themes::generate_base_theme(&persistent_data.theme));
@@ -210,8 +211,9 @@ impl epi::App for EvilSetApp {
             AppState::Menu => self.update_menu(ctx, frame),
             AppState::Set => self.play_set(ctx, frame),
             AppState::EvilSet => self.play_evilset(ctx, frame),
-            // &mut GameState::ShowDeck => self.show_deck(ctx, frame),
-            _ => todo!(),
+            AppState::UltraSet => self.play_ultraset(ctx, frame),
+            AppState::EvilUltraSet => self.play_evilultraset(ctx, frame),
+            AppState::Help => self.show_help(ctx, frame),
         }
     }
 }
@@ -224,7 +226,7 @@ impl EvilSetApp {
             app_state,
             previous_state,
             game_data,
-            background_rendering,
+            background_rendering: _,
         } = self;
 
         match previous_state {
@@ -343,6 +345,11 @@ impl EvilSetApp {
                     if theme_btn.clicked() {
                         persistent_data.theme.switch();
                     }
+
+                    let help_button = ui.add(Button::new(RichText::new("❓").size(25.0)));
+                    if help_button.clicked() {
+                        *app_state = AppState::Help;
+                    }
                 });
 
                 ui.vertical_centered(|ui| {
@@ -368,7 +375,6 @@ impl EvilSetApp {
                     .clicked()
                 {
                     *app_state = AppState::Set;
-                    println!("Set selected");
                 }
 
                 if ui
@@ -380,7 +386,6 @@ impl EvilSetApp {
                     .clicked()
                 {
                     *app_state = AppState::EvilSet;
-                    println!("Evil Set selected");
                 }
 
                 if ui
@@ -392,7 +397,6 @@ impl EvilSetApp {
                     .clicked()
                 {
                     *app_state = AppState::UltraSet;
-                    println!("Ultra Set selected");
                 }
 
                 if ui
@@ -404,9 +408,155 @@ impl EvilSetApp {
                     .clicked()
                 {
                     *app_state = AppState::EvilUltraSet;
-                    println!("Evil Ultra Set selected");
                 }
             })
+        });
+    }
+
+    fn show_help(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        let Self {
+            persistent_data,
+            app_state,
+            previous_state,
+            game_data: _,
+            background_rendering: _,
+        } = self;
+
+        egui::SidePanel::right("side_panel")
+            // .default_width(160.0)
+            .resizable(false)
+            .show(ctx, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.heading("Best Times");
+                    });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        ui.label(
+                            RichText::new("Set")
+                                .font(FontId::proportional(18.0))
+                                .color(crate::themes::thematic_blue(&persistent_data.theme)),
+                        );
+                        for time in persistent_data
+                            .times
+                            .set_times
+                            .iter()
+                            .take(TIMES_TO_DISPLAY)
+                        {
+                            ui.monospace(util::standard_format(time.clone()));
+                        }
+                    });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        ui.label(
+                            RichText::new("Evil Set")
+                                .font(FontId::proportional(18.0))
+                                .color(crate::themes::thematic_red(&persistent_data.theme)),
+                        );
+                        for time in persistent_data
+                            .times
+                            .evilset_times
+                            .iter()
+                            .take(TIMES_TO_DISPLAY)
+                        {
+                            ui.monospace(util::standard_format(time.clone()));
+                        }
+                    });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        ui.label(
+                            RichText::new("Ultra Set")
+                                .font(FontId::proportional(18.0))
+                                .color(crate::themes::thematic_blue(&persistent_data.theme)),
+                        );
+                        for time in persistent_data
+                            .times
+                            .ultraset_times
+                            .iter()
+                            .take(TIMES_TO_DISPLAY)
+                        {
+                            ui.monospace(util::standard_format(time.clone()));
+                        }
+                    });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        ui.label(
+                            RichText::new("Evil Ultra Set")
+                                .font(FontId::proportional(18.0))
+                                .color(crate::themes::thematic_red(&persistent_data.theme)),
+                        );
+                        for time in persistent_data
+                            .times
+                            .evilultraset_times
+                            .iter()
+                            .take(TIMES_TO_DISPLAY)
+                        {
+                            ui.monospace(util::standard_format(time.clone()));
+                        }
+                    });
+                });
+
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.1;
+                        ui.label("Source code on ");
+                        ui.hyperlink_to("Github", "https://github.com/sayantangkhan/evilset");
+                        egui::warn_if_debug_build(ui);
+                    });
+                });
+            });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.with_layout(Layout::left_to_right(), |ui| {
+                    *ui.visuals_mut() = match persistent_data.theme {
+                        AppTheme::Dark => egui::Visuals::dark(),
+                        AppTheme::Light => egui::Visuals::light(),
+                    };
+                    let theme_btn = ui.add(Button::new({
+                        match persistent_data.theme {
+                            AppTheme::Dark => RichText::new("🌞").size(25.0),
+                            AppTheme::Light => RichText::new("🌙").size(25.0),
+                        }
+                    }));
+                    if theme_btn.clicked() {
+                        persistent_data.theme.switch();
+                    }
+
+                    let close_button = ui.add(Button::new(RichText::new("❌").size(25.0)));
+                    if close_button.clicked() {
+                        *app_state = AppState::Menu;
+                        *previous_state = Some(AppState::Set);
+                    }
+                });
+
+                ui.vertical_centered(|ui| {
+                    ui.heading(
+                        RichText::new("Help")
+                            .font(FontId::proportional(28.0))
+                            .color(crate::themes::thematic_blue(&persistent_data.theme)),
+                    );
+                });
+            });
+
+            ui.add_space(10.0);
+            ui.separator();
+            ui.add_space(20.0);
+
+            Frame::default()
+                .margin(egui::style::Margin::symmetric(100.0, 10.0))
+                .show(ui, |ui| {
+                    let help_text = include_str!("../help.txt");
+                    ui.label(RichText::new(help_text).font(FontId::proportional(21.0)));
+                });
         });
     }
 
@@ -539,11 +689,11 @@ impl EvilSetApp {
                         active_deck,
                         card_textures,
                         selected,
-                        game_started,
-                        game_ended,
+                        game_started: _,
+                        game_ended: _,
                         prev_frame,
-                        asked_for_hint,
-                        updated_times,
+                        asked_for_hint: _,
+                        updated_times: _,
                     } = game_data.as_mut().unwrap();
 
                     *ui.visuals_mut() =
@@ -685,7 +835,7 @@ impl EvilSetApp {
                                     ui.add(Button::new(RichText::new("❌").size(25.0)));
                                 if close_button.clicked() {
                                     *app_state = AppState::Menu;
-                                    *previous_state = Some(AppState::Set);
+                                    *previous_state = Some(AppState::EvilSet);
                                 }
 
                                 let hint_button =
@@ -697,9 +847,9 @@ impl EvilSetApp {
 
                             ui.vertical_centered(|ui| {
                                 ui.heading(
-                                    RichText::new("Set").font(FontId::proportional(28.0)).color(
-                                        crate::themes::thematic_blue(&persistent_data.theme),
-                                    ),
+                                    RichText::new("Evil Set")
+                                        .font(FontId::proportional(28.0))
+                                        .color(crate::themes::thematic_red(&persistent_data.theme)),
                                 );
                             });
 
@@ -752,11 +902,11 @@ impl EvilSetApp {
                                 active_deck,
                                 card_textures,
                                 selected,
-                                game_started,
-                                game_ended,
+                                game_started: _,
+                                game_ended: _,
                                 prev_frame,
-                                asked_for_hint,
-                                updated_times,
+                                asked_for_hint: _,
+                                updated_times: _,
                             } = game_data.as_mut().unwrap();
 
                             *ui.visuals_mut() = crate::themes::generate_card_theme(
@@ -803,7 +953,7 @@ impl EvilSetApp {
                                     ));
                                     if close_button.clicked() {
                                         *app_state = AppState::Menu;
-                                        *previous_state = Some(AppState::Set);
+                                        *previous_state = Some(AppState::EvilSet);
                                     }
                                 });
                             }
@@ -814,16 +964,416 @@ impl EvilSetApp {
         }
     }
 
-    fn play_ultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {}
+    fn play_ultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        let Self {
+            persistent_data,
+            app_state,
+            previous_state,
+            game_data,
+            background_rendering,
+        } = self;
 
-    fn play_evilultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {}
+        if game_data.is_none() {
+            let rendering_promise = background_rendering.standard_deck.as_mut().unwrap();
+            match rendering_promise.ready() {
+                None => {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.vertical_centered_justified(|ui| {
+                            ui.label(
+                                RichText::new("Rendering cards").font(FontId::proportional(18.0)),
+                            );
+                            ui.add(egui::Spinner::new()); // still loading
+                        });
+                    });
+                }
+                Some(card_textures) => {
+                    let deck = Deck::new_standard_deck();
+                    let active_deck = GameDeck::start_ultraset_play(&deck);
+
+                    // For debugging purposes
+                    // let mut active_deck = GameDeck::start_ultraset_play(&deck);
+                    // active_deck.in_deck_mut().clear();
+
+                    *game_data = Some(ActiveGameData {
+                        active_deck,
+                        card_textures: Some(card_textures.clone()),
+                        selected: HashSet::new(),
+                        game_started: Some(Instant::now()),
+                        game_ended: None,
+                        prev_frame: None,
+                        asked_for_hint: false,
+                        updated_times: false,
+                    });
+                }
+            }
+        } else {
+            // Checking if 4 cards have been selected, and if so, evaluating them for correctness
+            backend::evaluate_selection(game_data.as_mut().unwrap());
+
+            let game_still_running = match game_data.as_ref().unwrap().prev_frame {
+                Some(PlayResponse::GameOver) => false,
+                _ => true,
+            };
+
+            let best_times_updated = game_data.as_ref().unwrap().updated_times;
+            if !game_still_running
+                && !best_times_updated
+                && !game_data.as_ref().unwrap().asked_for_hint
+            {
+                let times = &mut persistent_data.times.ultraset_times;
+                let elapsed_time = game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                    - game_data.as_ref().unwrap().game_ended.unwrap().elapsed();
+                times.push(elapsed_time);
+                times.sort();
+                let end_index = std::cmp::min(TIMES_TO_DISPLAY, times.len());
+                *times = times[0..end_index].to_vec();
+                game_data.as_mut().unwrap().updated_times = true;
+            }
+
+            // Handling the keyboard events if nothing happened previous frame
+            if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
+                keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+            }
+
+            egui::CentralPanel::default().show(ctx, |ui| {
+                // The central panel the region left after adding TopPanel's and SidePanel's
+
+                ui.horizontal(|ui| {
+                    ui.with_layout(Layout::left_to_right(), |ui| {
+                        let close_button = ui.add(Button::new(RichText::new("❌").size(25.0)));
+                        if close_button.clicked() {
+                            *app_state = AppState::Menu;
+                            *previous_state = Some(AppState::UltraSet);
+                        }
+
+                        let hint_button = ui.add(Button::new(RichText::new("❓").size(25.0)));
+                        if hint_button.clicked() && game_still_running {
+                            backend::show_hint(game_data);
+                        }
+                    });
+
+                    ui.vertical_centered(|ui| {
+                        ui.heading(
+                            RichText::new("Ultra Set")
+                                .font(FontId::proportional(28.0))
+                                .color(crate::themes::thematic_blue(&persistent_data.theme)),
+                        );
+                    });
+
+                    ui.with_layout(Layout::right_to_left(), |ui| {
+                        ui.label(
+                            RichText::new(format!(
+                                "⏱ {}",
+                                util::standard_format(if game_still_running {
+                                    game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                } else {
+                                    game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                        - game_data.as_ref().unwrap().game_ended.unwrap().elapsed()
+                                })
+                            ))
+                            .font(FontId::proportional(28.0)),
+                        );
+
+                        let cards_left = game_data.as_ref().unwrap().active_deck.in_deck().len();
+
+                        ui.label(
+                            RichText::new(format!("{} cards left", cards_left))
+                                .font(FontId::proportional(23.0)),
+                        );
+                        ctx.request_repaint();
+                    });
+                });
+
+                ui.add_space(10.0);
+                ui.separator();
+                ui.add_space(20.0);
+
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    let ActiveGameData {
+                        active_deck,
+                        card_textures,
+                        selected,
+                        game_started: _,
+                        game_ended: _,
+                        prev_frame,
+                        asked_for_hint: _,
+                        updated_times: _,
+                    } = game_data.as_mut().unwrap();
+
+                    *ui.visuals_mut() =
+                        crate::themes::generate_card_theme(&persistent_data.theme, prev_frame);
+
+                    let available_width = ui.available_width();
+                    let available_height = ui.available_height();
+
+                    let card_textures = card_textures.as_ref().unwrap();
+
+                    ui.columns(3, |columns| {
+                        for (index, card) in active_deck.in_play().iter().enumerate() {
+                            let texture = card_textures.get(card).unwrap();
+
+                            let mut button = ImageButton::new(
+                                texture,
+                                util::scale_card(available_width, available_height),
+                            );
+
+                            if selected.contains(&index) {
+                                button = button.selected(true);
+                            }
+
+                            let response = &mut columns[index % 3].add(button);
+
+                            if response.clicked() {
+                                if prev_frame.is_none() {
+                                    backend::select_index(index, active_deck, selected);
+                                }
+                            }
+                        }
+                    });
+
+                    if !game_still_running {
+                        ui.vertical_centered(|ui| {
+                            ui.label(RichText::new("Game over").font(FontId::proportional(23.0)));
+
+                            let close_button = ui
+                                .add(Button::new(RichText::new("Return to main menu").size(23.0)));
+                            if close_button.clicked() {
+                                *app_state = AppState::Menu;
+                                *previous_state = Some(AppState::UltraSet);
+                            }
+                        });
+                    }
+                })
+            });
+        }
+    }
+
+    fn play_evilultraset(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        let Self {
+            persistent_data,
+            app_state,
+            previous_state,
+            game_data,
+            background_rendering,
+        } = self;
+
+        if game_data.is_none() {
+            let deck = Deck::new_random_deck();
+            let active_deck = GameDeck::start_ultraset_play(&deck);
+
+            // For debugging purposes
+            // let mut active_deck = GameDeck::start_set_play(&deck);
+            // active_deck.in_deck_mut().clear();
+
+            *game_data = Some(ActiveGameData {
+                active_deck,
+                card_textures: None,
+                selected: HashSet::new(),
+                game_started: None,
+                game_ended: None,
+                prev_frame: None,
+                asked_for_hint: false,
+                updated_times: false,
+            });
+
+            let rendering_promise = render::deck_texture_promise(deck, ctx);
+            background_rendering.randomized_deck = Some(rendering_promise);
+        } else {
+            match &background_rendering.randomized_deck {
+                Some(rendering_promise) => {
+                    match rendering_promise.ready() {
+                        None => {
+                            egui::CentralPanel::default().show(ctx, |ui| {
+                                ui.vertical_centered_justified(|ui| {
+                                    ui.label(
+                                        RichText::new("Rendering cards")
+                                            .font(FontId::proportional(18.0)),
+                                    );
+                                    ui.add(egui::Spinner::new()); // still loading
+                                });
+                            });
+                        }
+                        Some(card_textures) => {
+                            game_data.as_mut().unwrap().card_textures = Some(card_textures.clone());
+                            game_data.as_mut().unwrap().game_started = Some(Instant::now());
+                            background_rendering.randomized_deck = None;
+                        }
+                    }
+                }
+                None => {
+                    // Checking if 3 cards have been selected, and if so, evaluating them for correctness
+                    backend::evaluate_selection(game_data.as_mut().unwrap());
+
+                    let game_still_running = match game_data.as_ref().unwrap().prev_frame {
+                        Some(PlayResponse::GameOver) => false,
+                        _ => true,
+                    };
+
+                    let best_times_updated = game_data.as_ref().unwrap().updated_times;
+                    if !game_still_running
+                        && !best_times_updated
+                        && !game_data.as_ref().unwrap().asked_for_hint
+                    {
+                        let times = &mut persistent_data.times.evilultraset_times;
+                        let elapsed_time =
+                            game_data.as_ref().unwrap().game_started.unwrap().elapsed()
+                                - game_data.as_ref().unwrap().game_ended.unwrap().elapsed();
+                        times.push(elapsed_time);
+                        times.sort();
+                        let end_index = std::cmp::min(TIMES_TO_DISPLAY, times.len());
+                        *times = times[0..end_index].to_vec();
+                        game_data.as_mut().unwrap().updated_times = true;
+                    }
+
+                    // Handling the keyboard events if nothing happened previous frame
+                    if game_data.as_ref().unwrap().prev_frame.is_none() && game_still_running {
+                        keyboard_card_select(&ctx, game_data.as_mut().unwrap());
+                    }
+
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        // The central panel the region left after adding TopPanel's and SidePanel's
+
+                        ui.horizontal(|ui| {
+                            ui.with_layout(Layout::left_to_right(), |ui| {
+                                let close_button =
+                                    ui.add(Button::new(RichText::new("❌").size(25.0)));
+                                if close_button.clicked() {
+                                    *app_state = AppState::Menu;
+                                    *previous_state = Some(AppState::EvilUltraSet);
+                                }
+
+                                let hint_button =
+                                    ui.add(Button::new(RichText::new("❓").size(25.0)));
+                                if hint_button.clicked() && game_still_running {
+                                    backend::show_hint(game_data);
+                                }
+                            });
+
+                            ui.vertical_centered(|ui| {
+                                ui.heading(
+                                    RichText::new("Evil Ultra Set")
+                                        .font(FontId::proportional(28.0))
+                                        .color(crate::themes::thematic_red(&persistent_data.theme)),
+                                );
+                            });
+
+                            ui.with_layout(Layout::right_to_left(), |ui| {
+                                ui.label(
+                                    RichText::new(format!(
+                                        "⏱ {}",
+                                        util::standard_format(if game_still_running {
+                                            game_data
+                                                .as_ref()
+                                                .unwrap()
+                                                .game_started
+                                                .unwrap()
+                                                .elapsed()
+                                        } else {
+                                            game_data
+                                                .as_ref()
+                                                .unwrap()
+                                                .game_started
+                                                .unwrap()
+                                                .elapsed()
+                                                - game_data
+                                                    .as_ref()
+                                                    .unwrap()
+                                                    .game_ended
+                                                    .unwrap()
+                                                    .elapsed()
+                                        })
+                                    ))
+                                    .font(FontId::proportional(28.0)),
+                                );
+
+                                let cards_left =
+                                    game_data.as_ref().unwrap().active_deck.in_deck().len();
+
+                                ui.label(
+                                    RichText::new(format!("{} cards left", cards_left))
+                                        .font(FontId::proportional(23.0)),
+                                );
+                                ctx.request_repaint();
+                            });
+                        });
+
+                        ui.add_space(10.0);
+                        ui.separator();
+                        ui.add_space(20.0);
+
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            let ActiveGameData {
+                                active_deck,
+                                card_textures,
+                                selected,
+                                game_started: _,
+                                game_ended: _,
+                                prev_frame,
+                                asked_for_hint: _,
+                                updated_times: _,
+                            } = game_data.as_mut().unwrap();
+
+                            *ui.visuals_mut() = crate::themes::generate_card_theme(
+                                &persistent_data.theme,
+                                prev_frame,
+                            );
+
+                            let available_width = ui.available_width();
+                            let available_height = ui.available_height();
+
+                            let card_textures = card_textures.as_ref().unwrap();
+
+                            ui.columns(3, |columns| {
+                                for (index, card) in active_deck.in_play().iter().enumerate() {
+                                    let texture = card_textures.get(card).unwrap();
+
+                                    let mut button = ImageButton::new(
+                                        texture,
+                                        util::scale_card(available_width, available_height),
+                                    );
+
+                                    if selected.contains(&index) {
+                                        button = button.selected(true);
+                                    }
+
+                                    let response = &mut columns[index % 3].add(button);
+
+                                    if response.clicked() {
+                                        if prev_frame.is_none() {
+                                            backend::select_index(index, active_deck, selected);
+                                        }
+                                    }
+                                }
+                            });
+
+                            if !game_still_running {
+                                ui.vertical_centered(|ui| {
+                                    ui.label(
+                                        RichText::new("Game over").font(FontId::proportional(23.0)),
+                                    );
+
+                                    let close_button = ui.add(Button::new(
+                                        RichText::new("Return to main menu").size(23.0),
+                                    ));
+                                    if close_button.clicked() {
+                                        *app_state = AppState::Menu;
+                                        *previous_state = Some(AppState::EvilUltraSet);
+                                    }
+                                });
+                            }
+                        })
+                    });
+                }
+            }
+        }
+    }
 }
 
 fn keyboard_card_select(context: &egui::Context, game_data: &mut ActiveGameData) {
     let events = &context.input().events;
     let active_deck = &mut game_data.active_deck;
     let selected_cards = &mut game_data.selected;
-    let next_frames = &mut game_data.prev_frame;
+    let _next_frames = &mut game_data.prev_frame;
 
     for event in events {
         if let egui::Event::Key {

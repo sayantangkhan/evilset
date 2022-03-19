@@ -41,7 +41,7 @@ impl GameDeck {
     pub fn selection_size(&self) -> usize {
         match self {
             &GameDeck::Set(_) => 3,
-            &GameDeck::UltraSet(_) => 3,
+            &GameDeck::UltraSet(_) => 4,
         }
     }
 
