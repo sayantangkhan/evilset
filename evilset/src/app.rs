@@ -584,11 +584,11 @@ impl EvilSetApp {
                 }
                 Some(card_textures) => {
                     let deck = Deck::new_standard_deck();
-                    // let active_deck = GameDeck::start_set_play(&deck);
+                    let active_deck = GameDeck::start_set_play(&deck);
 
                     // For debugging purposes
-                    let mut active_deck = GameDeck::start_set_play(&deck);
-                    active_deck.in_deck_mut().clear();
+                    // let mut active_deck = GameDeck::start_set_play(&deck);
+                    // active_deck.in_deck_mut().clear();
 
                     *game_data = Some(ActiveGameData {
                         active_deck,
