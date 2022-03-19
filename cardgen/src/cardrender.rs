@@ -4,9 +4,9 @@ use tiny_skia::Pixmap;
 use crate::{colorandfill::color_shape, filling_nodes::FillingNodes, CardVisualAttr};
 
 /// Width at which the card is rendered
-pub const WIDTH: u32 = 292;
+pub const WIDTH: u32 = 400;
 /// Height at which the card is rendered
-pub const HEIGHT: u32 = 174;
+pub const HEIGHT: u32 = 238;
 
 // pub const WIDTH: u32 = 600;
 // pub const HEIGHT: u32 = 350;
