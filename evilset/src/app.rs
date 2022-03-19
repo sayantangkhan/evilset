@@ -584,11 +584,11 @@ impl EvilSetApp {
                 }
                 Some(card_textures) => {
                     let deck = Deck::new_standard_deck();
-                    let active_deck = GameDeck::start_set_play(&deck);
+                    // let active_deck = GameDeck::start_set_play(&deck);
 
                     // For debugging purposes
-                    // let mut active_deck = GameDeck::start_set_play(&deck);
-                    // active_deck.in_deck_mut().clear();
+                    let mut active_deck = GameDeck::start_set_play(&deck);
+                    active_deck.in_deck_mut().clear();
 
                     *game_data = Some(ActiveGameData {
                         active_deck,
@@ -729,6 +729,9 @@ impl EvilSetApp {
                         ui.vertical_centered(|ui| {
                             ui.label(RichText::new("Game over").font(FontId::proportional(23.0)));
 
+                            *ui.visuals_mut() =
+                                crate::themes::generate_base_theme(&persistent_data.theme);
+
                             let close_button = ui
                                 .add(Button::new(RichText::new("Return to main menu").size(23.0)));
                             if close_button.clicked() {
@@ -773,7 +776,7 @@ impl EvilSetApp {
             let rendering_promise = render::deck_texture_promise(deck, ctx);
             background_rendering.randomized_deck = Some(rendering_promise);
         } else {
-            match &background_rendering.randomized_deck {
+            match &mut background_rendering.randomized_deck {
                 Some(rendering_promise) => {
                     match rendering_promise.ready() {
                         None => {
@@ -943,6 +946,9 @@ impl EvilSetApp {
                                     ui.label(
                                         RichText::new("Game over").font(FontId::proportional(23.0)),
                                     );
+
+                                    *ui.visuals_mut() =
+                                        crate::themes::generate_base_theme(&persistent_data.theme);
 
                                     let close_button = ui.add(Button::new(
                                         RichText::new("Return to main menu").size(23.0),
@@ -1129,6 +1135,9 @@ impl EvilSetApp {
                         ui.vertical_centered(|ui| {
                             ui.label(RichText::new("Game over").font(FontId::proportional(23.0)));
 
+                            *ui.visuals_mut() =
+                                crate::themes::generate_base_theme(&persistent_data.theme);
+
                             let close_button = ui
                                 .add(Button::new(RichText::new("Return to main menu").size(23.0)));
                             if close_button.clicked() {
@@ -1173,7 +1182,7 @@ impl EvilSetApp {
             let rendering_promise = render::deck_texture_promise(deck, ctx);
             background_rendering.randomized_deck = Some(rendering_promise);
         } else {
-            match &background_rendering.randomized_deck {
+            match &mut background_rendering.randomized_deck {
                 Some(rendering_promise) => {
                     match rendering_promise.ready() {
                         None => {
@@ -1343,6 +1352,9 @@ impl EvilSetApp {
                                     ui.label(
                                         RichText::new("Game over").font(FontId::proportional(23.0)),
                                     );
+
+                                    *ui.visuals_mut() =
+                                        crate::themes::generate_base_theme(&persistent_data.theme);
 
                                     let close_button = ui.add(Button::new(
                                         RichText::new("Return to main menu").size(23.0),
