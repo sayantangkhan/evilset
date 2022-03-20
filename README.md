@@ -25,4 +25,4 @@ Make sure you are using the latest version of stable rust by running `rustup upd
 
 ## Building locally on macOS
 
-You need to install `rustup`, and possibly XCode. Once that's done, building is just a matter of running `cargo build --release`. Note that this just creates an executable, but not an `.app` bundle.
+You need to install `rustup`, and possibly XCode. Once that's done, building is just a matter of running `cargo bundle --release` in the `evilset` directory. This creates an `.app` bundle.
