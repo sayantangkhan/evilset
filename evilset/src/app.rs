@@ -710,7 +710,11 @@ impl EvilSetApp {
 
                             let mut button = ImageButton::new(
                                 texture,
-                                util::scale_card(available_width, available_height),
+                                util::scale_card(
+                                    available_width,
+                                    available_height,
+                                    active_deck.in_play().len() / 3,
+                                ),
                             );
 
                             if selected.contains(&index) {
@@ -926,7 +930,11 @@ impl EvilSetApp {
 
                                     let mut button = ImageButton::new(
                                         texture,
-                                        util::scale_card(available_width, available_height),
+                                        util::scale_card(
+                                            available_width,
+                                            available_height,
+                                            active_deck.in_play().len() / 3,
+                                        ),
                                     );
 
                                     if selected.contains(&index) {
@@ -1116,7 +1124,11 @@ impl EvilSetApp {
 
                             let mut button = ImageButton::new(
                                 texture,
-                                util::scale_card(available_width, available_height),
+                                util::scale_card(
+                                    available_width,
+                                    available_height,
+                                    active_deck.in_play().len() / 3,
+                                ),
                             );
 
                             if selected.contains(&index) {
@@ -1332,7 +1344,11 @@ impl EvilSetApp {
 
                                     let mut button = ImageButton::new(
                                         texture,
-                                        util::scale_card(available_width, available_height),
+                                        util::scale_card(
+                                            available_width,
+                                            available_height,
+                                            active_deck.in_play().len() / 3,
+                                        ),
                                     );
 
                                     if selected.contains(&index) {

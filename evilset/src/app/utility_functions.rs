@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 // TODO: Also have a minimum height
-pub(super) fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
+pub(super) fn scale_card(frame_width: f32, frame_height: f32, rows: usize) -> (f32, f32) {
     let scaling_with_width = {
         let new_width = frame_width / 4.0;
         let new_height = (cardgen::CARDHEIGHT as f32) * (new_width / (cardgen::CARDWIDTH as f32));
@@ -9,7 +9,8 @@ pub(super) fn scale_card(frame_width: f32, frame_height: f32) -> (f32, f32) {
     };
 
     let scaling_with_height = {
-        let new_height = frame_height / 5.0;
+        let divide = (1 + std::cmp::max(4, rows)) as f32;
+        let new_height = frame_height / divide;
         let new_width = (cardgen::CARDWIDTH as f32) * (new_height / (cardgen::CARDHEIGHT as f32));
         (new_width, new_height)
     };
