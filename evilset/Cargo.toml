@@ -1,5 +1,6 @@
 [package]
 name = "evilset"
+description = "A variant of the card game Set that randomizes attributes."
 version = "0.9.0"
 authors = ["Sayantan Khan <sayantangkhan@gmail.com>"]
 edition = "2021"
@@ -27,3 +28,13 @@ default = ["eframe/persistence", "egui/multi_threaded"]
 console_error_panic_hook = "0.1.6"
 tracing-wasm = "0.2"
 instant = { version = "0.1", features = [ "stdweb" ] }
+
+[package.metadata.bundle]
+name = "Evilset"
+identifier = "io.github.sayantangkhan.evilset"
+icon = ["icons/icon@2x.png"]
+version = "0.9.0"
+resources = []
+copyright = "Copyright (c) Sayantan Khan 2022. All rights reserved."
+category = "Puzzle game"
+osx_minimum_system_version = "11.0"
