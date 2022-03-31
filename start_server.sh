@@ -6,7 +6,6 @@ set -eu
 
 cargo install basic-http-server
 
-echo "open http://10.200.200.5:8080"
+echo "open http://127.0.0.1:8080"
 
-(cd web && basic-http-server --addr 10.200.200.5:8080 .)
-# (cd docs && python3 -m http.server 8080 --bind 127.0.0.1)
+(cd web && basic-http-server --addr 0.0.0.0:8080 .)

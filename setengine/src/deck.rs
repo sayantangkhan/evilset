@@ -210,7 +210,7 @@ impl GameDeck {
                         }
 
                         // Add more cards until in_play has set
-                        while !selection_contains_set(self.in_play()) {
+                        while !selection_contains_ultraset(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }
@@ -227,7 +227,7 @@ impl GameDeck {
                         for index in selection {
                             self.in_play_mut().remove(index);
                         }
-                        while !selection_contains_set(self.in_play()) {
+                        while !selection_contains_ultraset(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
                             }
