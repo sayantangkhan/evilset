@@ -227,6 +227,11 @@ impl GameDeck {
                         for index in selection {
                             self.in_play_mut().remove(index);
                         }
+                        for _ in 0..4 {
+                            if let Some(card) = self.in_deck_mut().pop() {
+                                self.in_play_mut().push(card);
+                            }
+                        }
                         while !selection_contains_ultraset(self.in_play()) {
                             if self.in_deck().is_empty() {
                                 return PlayResponse::GameOver;
